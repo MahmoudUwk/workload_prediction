@@ -11,15 +11,20 @@ import os
 from os import listdir
 from os.path import isfile, join
 
-data_path = "C:/Users/mahmo/OneDrive/Desktop/kuljeet/pwr data paper 2/1Hz"
-# data_path = "C:/Users/msallam/Desktop/Kuljeet/1Hz"
-# data_path = 'C:/Users/msallam/Desktop/Energy Prediction/1Hz'
-# sav_path = "C:/Users/msallam/Desktop/Energy Prediction/resampled data"
-sav_path = "C:/Users/mahmo/OneDrive/Desktop/kuljeet/pwr data paper 2/resampled data"
+data_path = "C:/Users/mahmo/OneDrive/Desktop/kuljeet/Cloud project/Datasets/rnd"
 
+sav_path = "C:/Users/mahmo/OneDrive/Desktop/kuljeet/Cloud project/Datasets/proccessed"
 
-onlyfiles = [f for f in listdir(data_path) if isfile(join(data_path, f)) and '.csv' in f]
+files_names = [] #file names including the complete path of each file.
 
+for subdir, dirs, files in os.walk(data_path): #loop over files
+  for file in files:
+      if file.endswith(".csv"):
+          full_file = os.path.join(subdir,file).lower()
+          files_names.append(full_file) #append file names, this is redundant, not needed but stored with the dataset
+
+txt = 'rnd'
+#%%
 def resample(df,txt):
     df_downsampled = df.resample(txt).mean()
     del df
@@ -27,27 +32,39 @@ def resample(df,txt):
     df_downsampled.to_csv(os.path.join(sav_path,txt+'.csv'))
     print(df_downsampled.shape)
 
-for counter , file in enumerate(onlyfiles):
-    full_path = os.path.join(data_path,file)
+for counter , full_path in enumerate(files_names):
+    print(counter)
+    # df_temp = pd.read_csv(full_path,sep=';/t',engine='python')
     if counter == 0:
-        df = pd.read_csv(full_path)
+        df =  pd.read_csv(full_path,sep=';\t',engine='python')
+        # print(df.shape)
     else:
-        df_temp = pd.read_csv(full_path)
-        df = pd.concat([df, df_temp])#.sort_values('timestamp').reset_index(drop=True)
-        print(df_temp,full_path)
-print(df.shape)
+        df_temp =  pd.read_csv(full_path,sep=';\t',engine='python')
+        df = pd.concat([df, df_temp])
+        # print(df_temp.shape)
+    # if counter == 0:
+    #     dict_dataset = {col: list(df[col]) for col in list(df.columns)}
+
+    # else:
+    #     [dict_dataset[col].append(df[col]) for col in list(df.columns)]
+
+# df = pd.DataFrame.from_dict(dict_dataset)
 #%%
-df.set_index(pd.to_datetime(df.timestamp), inplace=True)
-df.drop(columns=["timestamp"], inplace=True)
-# df = df.dropna()
-# df.to_csv(os.path.join(sav_path,'1Hz.csv'))
-# df = pd.read_csv(data_path)
+print(df.shape)
 
-resample(df,'1T')
+df.to_csv(os.path.join(sav_path,txt+'.csv'), index=False) 
+#%%
+# df.set_index(pd.to_datetime(df.timestamp), inplace=True)
+# df.drop(columns=["timestamp"], inplace=True)
+# # df = df.dropna()
+# # df.to_csv(os.path.join(sav_path,'1Hz.csv'))
+# # df = pd.read_csv(data_path)
 
-resample(df,'10T')
+# resample(df,'1T')
 
-resample(df,'15T')
+# resample(df,'10T')
 
-resample(df,'30T')
+# resample(df,'15T')
+
+# resample(df,'30T')
 
