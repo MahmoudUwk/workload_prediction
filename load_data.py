@@ -5,11 +5,13 @@ Created on Fri Oct 20 10:04:26 2023
 @author: mahmo
 """
 import pandas as pd
-
+import pickle
 
 import os
 from os import listdir
 from os.path import isfile, join
+
+txt = 'fastStorage' #fastStorage #rnd
 
 data_path = "C:/Users/mahmo/OneDrive/Desktop/kuljeet/Cloud project/Datasets/rnd"
 
@@ -23,7 +25,7 @@ for subdir, dirs, files in os.walk(data_path): #loop over files
           full_file = os.path.join(subdir,file).lower()
           files_names.append(full_file) #append file names, this is redundant, not needed but stored with the dataset
 
-txt = 'rnd'
+
 #%%
 def resample(df,txt):
     df_downsampled = df.resample(txt).mean()
@@ -34,25 +36,23 @@ def resample(df,txt):
 
 for counter , full_path in enumerate(files_names):
     print(counter)
-    # df_temp = pd.read_csv(full_path,sep=';/t',engine='python')
     if counter == 0:
         df =  pd.read_csv(full_path,sep=';\t',engine='python')
-        # print(df.shape)
+        df['date'] = pd.to_datetime(df['Timestamp [ms]'],unit='s')#.apply(lambda x: x.date())
     else:
         df_temp =  pd.read_csv(full_path,sep=';\t',engine='python')
+        df_temp['date'] = pd.to_datetime(df_temp['Timestamp [ms]'],unit='s')#.apply(lambda x: x.date())
         df = pd.concat([df, df_temp])
-        # print(df_temp.shape)
-    # if counter == 0:
-    #     dict_dataset = {col: list(df[col]) for col in list(df.columns)}
 
-    # else:
-    #     [dict_dataset[col].append(df[col]) for col in list(df.columns)]
-
-# df = pd.DataFrame.from_dict(dict_dataset)
 #%%
 print(df.shape)
 
-df.to_csv(os.path.join(sav_path,txt+'.csv'), index=False) 
+
+filehandler = open(os.path.join(sav_path, txt+'.obj'), 'wb') #save the dataset using pickle as an object 
+pickle.dump(df, filehandler)#saving the dataset
+filehandler.close() #closing the object that saved the dataset
+
+# df.to_csv(os.path.join(sav_path,txt+'.csv'), index=False) 
 #%%
 # df.set_index(pd.to_datetime(df.timestamp), inplace=True)
 # df.drop(columns=["timestamp"], inplace=True)
