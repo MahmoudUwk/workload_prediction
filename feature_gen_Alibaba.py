@@ -22,21 +22,29 @@ def save_object(obj, filename):
         pickle.dump(obj, outp, pickle.HIGHEST_PROTOCOL)
 
 
+data_path = "C:/Users/msallam/Desktop/Cloud project/Datasets/Alidbaba"
+# data_path = "C:/Users/mahmo/OneDrive/Desktop/kuljeet/Cloud project/Datasets/Alidbaba/"
+sav_path = "C:/Users/msallam/Desktop/Cloud project/Datasets/Alidbaba/feature_obj"
+
+
+if not os.path.exists(sav_path):
+    os.makedirs(sav_path)
+
+
 script = "server_usage.csv"
 target = " used percent of cpus(%)"
 pd.set_option('display.expand_frame_repr', False)
 pd.options.display.max_columns = None
 
-info_path = "C:/Users/mahmo/OneDrive/Desktop/kuljeet/Cloud project/Datasets/Alidbaba/schema.csv"
+info_path = data_path+"/schema.csv"
 
 df_info =  pd.read_csv(info_path)
 df_info = df_info[df_info["file name"] == script]['content']
 
 
-sav_path = "C:/Users/mahmo/OneDrive/Desktop/kuljeet/Cloud project/Datasets/Alidbaba/"
-full_path = "C:/Users/mahmo/OneDrive/Desktop/kuljeet/Cloud project/Datasets/Alidbaba/"+script
-nrows = None
-df =  pd.read_csv(full_path,nrows=nrows,header=None,names=list(df_info))
+
+full_path = os.path.join(data_path,script)
+df =  pd.read_csv(full_path,header=None,names=list(df_info))
 
 df = df[[" machine id", " timestamp"," used percent of cpus(%)"]]
 # df = df[df.notna()]
