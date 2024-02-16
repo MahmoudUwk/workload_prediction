@@ -6,8 +6,8 @@ Created on Tue Feb  6 11:09:55 2024
 """
 import pandas as pd
 import numpy as np
-from tsfresh import extract_features
-from tsfresh.utilities.dataframe_functions import roll_time_series
+# from tsfresh import extract_features
+# from tsfresh.utilities.dataframe_functions import roll_time_series
 script = "server_usage.csv"
 target = " used percent of cpus(%)"
 pd.set_option('display.expand_frame_repr', False)
@@ -57,10 +57,10 @@ df = df.dropna()
 seq = 12
 #%%
 
-df_rolled = roll_time_series(df, column_id=' machine id', column_sort=" timestamp",n_jobs = 1,max_timeshift=seq)
+# df_rolled = roll_time_series(df, column_id=' machine id', column_sort=" timestamp",n_jobs = 1,max_timeshift=seq)
 
-df_features = extract_features(df_rolled, column_id="id", column_sort=" timestamp",n_jobs = 1)
-
+# df_features = extract_features(df_rolled, column_id="id", column_sort=" timestamp",n_jobs = 1)
+#%%
 # grouped = df.groupby([" machine id"])
 # dataset_widnows = []
 # M_ids = []
@@ -81,41 +81,41 @@ df_features = extract_features(df_rolled, column_id="id", column_sort=" timestam
 # dataset_widnows = list_to_array(dataset_widnows,seq)
 
 # label_pred = list_to_array(label_pred,0)
+#%%
 
 
 
 
 
-
-# df = df[df[target]<63]
+df = df[df[target]<63]
 # print(df.head())
 
 # print(df.mean())
 
 
-# df_CPU = df[target]
+df_CPU = df[target]
 # df.groupby([" machine id"]).std()[target].hist()
 # df.groupby([" machine id"]).boxplot(column=[target])
-# df_grouped_id = df.groupby([" machine id"])
-# std_therhold = [2,7]
+df_grouped_id = df.groupby([" machine id"])
+std_therhold = [2,7]
 
-# M4 = np.where(df_grouped_id.std()[target]<std_therhold[0])[0]
-# M12 = np.where(np.array(df_grouped_id.std()[target]<std_therhold[1]) * np.array(df_grouped_id.std()[target]>std_therhold[0]))[0]
-# M3 = np.where(df_grouped_id.std()[target]>std_therhold[1])[0]
+M4 = np.where(df_grouped_id.std()[target]<std_therhold[0])[0]
+M12 = np.where(np.array(df_grouped_id.std()[target]<std_therhold[1]) * np.array(df_grouped_id.std()[target]>std_therhold[0]))[0]
+M3 = np.where(df_grouped_id.std()[target]>std_therhold[1])[0]
 
-# print(len(M4),len(M12),len(M3))
+print(len(M4),len(M12),len(M3))
 
-# df_M4 = df.loc[df[" machine id"].isin(M4)][target]
-# df_M12 = df.loc[df[" machine id"].isin(M12)][target]
-# df_M3= df.loc[df[" machine id"].isin(M3)][target]
+df_M4 = df.loc[df[" machine id"].isin(M4)][target]
+df_M12 = df.loc[df[" machine id"].isin(M12)][target]
+df_M3= df.loc[df[" machine id"].isin(M3)][target]
 
-# df_M4.boxplot(column=[' used percent of cpus(%)'])
-# df_M12.boxplot(column=[' used percent of cpus(%)'])
-# df_M3.boxplot(column=[' used percent of cpus(%)'])
+df_M4.boxplot(column=[' used percent of cpus(%)'])
+df_M12.boxplot(column=[' used percent of cpus(%)'])
+df_M3.boxplot(column=[' used percent of cpus(%)'])
 
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
-# plt.boxplot([df_M4,df_M12,df_M3], labels=["M4","M12","M3"])
+plt.boxplot([df_M4,df_M12,df_M3], labels=["M4","M12","M3"])
 
 
 
