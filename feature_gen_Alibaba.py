@@ -22,13 +22,13 @@ def save_object(obj, filename):
         pickle.dump(obj, outp, pickle.HIGHEST_PROTOCOL)
 
 
-data_path = "C:/Users/msallam/Desktop/Cloud project/Datasets/Alidbaba"
-# data_path = "C:/Users/mahmo/OneDrive/Desktop/kuljeet/Cloud project/Datasets/Alidbaba/"
-sav_path = "C:/Users/msallam/Desktop/Cloud project/Datasets/Alidbaba/feature_obj"
+# data_path = "C:/Users/msallam/Desktop/Cloud project/Datasets/Alidbaba"
+data_path = "C:/Users/mahmo/OneDrive/Desktop/kuljeet/Cloud project/Datasets/Alidbaba/"
 
 
-if not os.path.exists(sav_path):
-    os.makedirs(sav_path)
+# sav_path = "C:/Users/msallam/Desktop/Cloud project/Datasets/Alidbaba/feature_obj"
+# if not os.path.exists(sav_path):
+#     os.makedirs(sav_path)
 
 
 script = "server_usage.csv"

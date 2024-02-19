@@ -1,5 +1,12 @@
 # -*- coding: utf-8 -*-
 """
+Created on Mon Feb 19 10:23:49 2024
+
+@author: mahmo
+"""
+
+# -*- coding: utf-8 -*-
+"""
 Created on Tue Feb  6 11:09:55 2024
 
 @author: mahmo
@@ -26,7 +33,7 @@ def sliding_windows(data, seq_length):
         #print((i,(i+seq_length)))
         x[ind,:] = data[ind:ind+seq_length]
         #print(data[ind+seq_length:ind+seq_length+k_step])
-        y[ind] = data[ind+seq_length:ind+seq_length+1][0]
+        y[ind] = data[ind+seq_length:ind+seq_length+1]
     return x,y
 
 def list_to_array(lst,seq_length):
@@ -54,27 +61,43 @@ df =  pd.read_csv(full_path,nrows=nrows,header=None,names=list(df_info))
 df = df[[" machine id", " timestamp"," used percent of cpus(%)"]]
 # df = df[df.notna()]
 df = df.dropna()
-seq = 12
 
 #%%
-grouped = df.groupby([" machine id"])
-dataset_widnows = []
-M_ids = []
-label_pred = []
-for M_id, M_id_val in grouped:
-    # print(M_id,M_id_val[target][:142].shape)
-    x,y = sliding_windows(np.array(M_id_val[target]), seq)
-    # if x.shape!=(130,12):
-        # print(M_id)
-        # print(M_id,M_id_val[target][:142].shape)
-    label_pred.append(y)
-    dataset_widnows.append(x)
-    M_ids.append([M_id[0]]*len(y))
 
-M_ids = [ x for xs in M_ids for x in xs]
-dataset_widnows = list_to_array(dataset_widnows,seq)
 
-label_pred = list_to_array(label_pred,0)
+df = df[df[target]<63]
+# print(df.head())
+
+# print(df.mean())
+
+
+df_CPU = df[target]
+# df.groupby([" machine id"]).std()[target].hist()
+# df.groupby([" machine id"]).boxplot(column=[target])
+df_grouped_id = df.groupby([" machine id"])
+std_therhold = [2,7]
+
+M4 = np.where(df_grouped_id.std()[target]<std_therhold[0])[0]
+M12 = np.where(np.array(df_grouped_id.std()[target]<std_therhold[1]) * np.array(df_grouped_id.std()[target]>std_therhold[0]))[0]
+M3 = np.where(df_grouped_id.std()[target]>std_therhold[1])[0]
+
+print(len(M4),len(M12),len(M3))
+
+df_M4 = df.loc[df[" machine id"].isin(M4)][target]
+df_M12 = df.loc[df[" machine id"].isin(M12)][target]
+df_M3= df.loc[df[" machine id"].isin(M3)][target]
+
+df_M4.boxplot(column=[' used percent of cpus(%)'])
+df_M12.boxplot(column=[' used percent of cpus(%)'])
+df_M3.boxplot(column=[' used percent of cpus(%)'])
+
+import matplotlib.pyplot as plt
+
+plt.boxplot([df_M4,df_M12,df_M3], labels=["M4","M12","M3"])
+
+
+
+
 
 
 
