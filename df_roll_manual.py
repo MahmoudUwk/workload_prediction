@@ -8,18 +8,20 @@ from tsfresh import extract_features
 def save_object(obj, filename):
     with open(filename, 'wb') as outp:  # Overwrites any existing file.
         pickle.dump(obj, outp, pickle.HIGHEST_PROTOCOL)
-        
+    
+base_path = "C:/Users/msallam/Desktop/Cloud project/Datasets/Alidbaba/"
+# base_path = "C:/Users/mahmo/OneDrive/Desktop/kuljeet/Cloud project/Datasets/Alidbaba/"
 script = "server_usage.csv"
 target = " used percent of cpus(%)"
 pd.set_option('display.expand_frame_repr', False)
 pd.options.display.max_columns = None
 
-info_path = "C:/Users/mahmo/OneDrive/Desktop/kuljeet/Cloud project/Datasets/Alidbaba/schema.csv"
+info_path = base_path+"schema.csv"
 
 df_info =  pd.read_csv(info_path)
 df_info = df_info[df_info["file name"] == script]['content']
 #%%
-base_path = "C:/Users/mahmo/OneDrive/Desktop/kuljeet/Cloud project/Datasets/Alidbaba/"
+
 full_path = base_path+script
 nrows = None
 df =  pd.read_csv(full_path,nrows=nrows,header=None,names=list(df_info))
@@ -63,16 +65,6 @@ for M_id, M_id_val in grouped:
     dict_Mid = {"X":df_features,"y":y}
     save_object(df_features, os.path.join(sav_path,'X_Y_M_id_'+str(M_id)+'.obj'))
 
-
-
-#     label_pred.append(y)
-#     dataset_widnows.append(x)
-#     M_ids.append([M_id[0]]*len(y))
-
-# M_ids = [ x for xs in M_ids for x in xs]
-# dataset_widnows = list_to_array(dataset_widnows,seq)
-
-# label_pred = list_to_array(label_pred,0)
 
 
 
