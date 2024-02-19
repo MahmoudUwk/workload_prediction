@@ -61,7 +61,7 @@ for M_id, M_id_val in grouped:
     df_dataset_rolled = df_dataset_rolled.drop([' machine id'], axis=1)
     df_features = extract_features(df_dataset_rolled, column_id="id", column_sort=" timestamp",n_jobs = 1).dropna(axis=1, how='all')
     dict_Mid = {"X":df_features,"y":y}
-    save_object(df_features, os.path.join(sav_path,'df_features_M_id_'+str(M_id)+'.obj'))
+    save_object(df_features, os.path.join(sav_path,'X_Y_M_id_'+str(M_id)+'.obj'))
 
 
 
