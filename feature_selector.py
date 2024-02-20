@@ -195,7 +195,7 @@ class FeatureSelector():
         self.corr_matrix = corr_matrix
     
         # Extract the upper triangle of the correlation matrix
-        upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k = 1).astype(np.bool))
+        upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k = 1).astype(np.bool_))
         
         # Select the features with correlations above the threshold
         # Need to use the absolute value
@@ -220,7 +220,7 @@ class FeatureSelector():
                                              'corr_value': corr_values})
 
             # Add to dataframe
-            record_collinear = record_collinear.append(temp_df, ignore_index = True)
+            record_collinear = pd.concat([record_collinear,temp_df],ignore_index = True)#record_collinear.append(temp_df, ignore_index = True)
 
         self.record_collinear = record_collinear
         self.ops['collinear'] = to_drop
@@ -333,8 +333,7 @@ class FeatureSelector():
                 if early_stopping:
                     # Train the model with early stopping
                     model.fit(train_features, train_labels, eval_metric = eval_metric,
-                              eval_set = [(valid_features, valid_labels)],
-                              early_stopping_rounds = 100, verbose = -1)
+                              eval_set = [(valid_features, valid_labels)])
                 else:
                     model.fit(train_features, train_labels)
                 

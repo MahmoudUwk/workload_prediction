@@ -9,11 +9,28 @@ from sklearn.preprocessing import MinMaxScaler
 from models_lib import reg_all,class_all
 from sklearn.model_selection import train_test_split
 from sklearn.datasets import make_regression
+from feature_selector import FeatureSelector
+import pickle
+import os
+
+def loadDatasetObj(fname):
+    file_id = open(fname, 'rb') 
+    data_dict = pickle.load(file_id)
+    file_id.close()
+    return data_dict
+
 def RMSE(test,pred):
     return np.abs(test-pred)
 
 def expand_dims(X):
     return np.expand_dims(X, axis = len(X.shape))
+
+data_path = 'C:/Users/msallam/Desktop/Cloud project/Datasets/Alidbaba/feature_obj'
+filename = os.path.join(data_path,'X_Y_alibaba.obj')
+df = loadDatasetObj(filename)
+df['X_train'] = df['X_train'].set_index("M_id")
+
+#%%
 
 X, y = make_regression(random_state=0,n_samples=4000, n_features=15,bias=10,noise=5)
 X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
@@ -32,7 +49,7 @@ y_train = np.squeeze(scaler.transform(y_train))
 y_test = np.squeeze(scaler.transform(y_test))
 
 
-
+#%%
 models = ["linear_reg","svr_reg","GPR_reg","GBT_reg"]
 models_dict = dict((el,c) for c,el in enumerate(models))
 
