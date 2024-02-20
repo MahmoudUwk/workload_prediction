@@ -42,9 +42,10 @@ M_ids = []
 label_pred = []
 # ids_rolled = []
 
-y = []
+
 for M_id, M_id_val in grouped:
     df_dataset_rolled = pd.DataFrame(columns=list(df.columns)+['id'])
+    y = []
     M_id_val = M_id_val.sort_values(by=[' timestamp']).reset_index(drop=True)
     print(M_id)
     for ind in range(len(M_id_val)-seq_length):
@@ -59,11 +60,14 @@ for M_id, M_id_val in grouped:
         y.append(M_id_val[target][ind+seq_length-1:ind+seq_length].iloc[0])
         
         
-        
+    
     df_dataset_rolled = df_dataset_rolled.drop([' machine id'], axis=1)
     df_features = extract_features(df_dataset_rolled, column_id="id", column_sort=" timestamp",n_jobs = 1).dropna(axis=1, how='all')
+    df_features['M_id'] = [M_id[0]]*len(df_features)
+    # df_features = df_features.set_index('M_id')
     dict_Mid = {"X":df_features,"y":y}
-    save_object(df_features, os.path.join(sav_path,'X_Y_M_id_'+str(M_id)+'.obj'))
+    assert(len(y)==len(df_features))
+    save_object(dict_Mid, os.path.join(sav_path,'X_Y_M_id_'+str(M_id[0])+'.obj'))
 
 
 
