@@ -1,42 +1,5 @@
 import numpy as np
 
-
-# def linear_reg(X_train,y_train,X_test):
-#     from sklearn.linear_model import LinearRegression
-#     reg = LinearRegression()
-#     reg.fit(X_train, y_train)
-    
-#     return reg,reg.predict(X_test)
-
-
-# def svr_reg(X_train,y_train,X_test):
-#     from sklearn.svm import SVR
-#     reg = SVR()
-#     reg.fit(X_train, y_train)
-    
-#     return reg,reg.predict(X_test)
-
-
-
-# def GPR_reg(X_train,y_train,X_test):
-#     from sklearn.gaussian_process import GaussianProcessRegressor
-#     reg = GaussianProcessRegressor()
-#     reg.fit(X_train, y_train)
-    
-#     return reg,reg.predict(X_test)
-
-
-
-
-# def GBT_reg(X_train,y_train,X_test):
-#     from sklearn.ensemble import GradientBoostingRegressor
-#     reg = GradientBoostingRegressor()
-#     reg.fit(X_train, y_train)
-    
-#     return reg,reg.predict(X_test)
-
-
-
 from sklearn.gaussian_process.kernels import DotProduct, WhiteKernel,RBF
 
 def reg_all(X_train,y_train,X_test,reg_model):
@@ -46,7 +9,8 @@ def reg_all(X_train,y_train,X_test,reg_model):
     from sklearn.linear_model import LinearRegression
     reg_models_names = ["linear_reg","svr_reg","GPR_reg","GBT_reg"]
     ind = [c for c,ele in enumerate(reg_models_names) if ele==reg_model][0]
-    regs_all = [LinearRegression(), SVR(),GaussianProcessRegressor(kernel=DotProduct()), GradientBoostingRegressor()]
+    regs_all = [LinearRegression(), SVR(kernel= 'poly'),GaussianProcessRegressor(kernel=DotProduct()), 
+                GradientBoostingRegressor(n_estimators=500,max_depth=10)]
     reg = regs_all[ind]
     reg.fit(X_train, y_train)
     
