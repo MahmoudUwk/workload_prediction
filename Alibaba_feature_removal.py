@@ -21,7 +21,8 @@ def save_object(obj, filename):
     with open(filename, 'wb') as outp:  # Overwrites any existing file.
         pickle.dump(obj, outp, pickle.HIGHEST_PROTOCOL)
 
-base_path = "C:/Users/msallam/Desktop/Cloud project/Datasets/Alidbaba/"
+base_path = "C:/Users/mahmo/OneDrive/Desktop/kuljeet/Cloud project/Datasets/Alidbaba"
+# base_path = "C:/Users/msallam/Desktop/Cloud project/Datasets/Alidbaba/"
 sav_path = base_path+"Proccessed_Alibaba"
 if not os.path.exists(sav_path):
     os.makedirs(sav_path)

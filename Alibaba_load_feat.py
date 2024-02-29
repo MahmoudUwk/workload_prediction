@@ -7,8 +7,8 @@ Created on Fri Feb 16 15:23:37 2024
 import pickle
 import os
 import pandas as pd
-sav_path = 'C:/Users/msallam/Desktop/Cloud project/Datasets/Alidbaba/feature_obj'
-# sav_path = "C:/Users/mahmo/OneDrive/Desktop/kuljeet/Cloud project/Datasets/Alidbaba/feature_obj"
+# sav_path = 'C:/Users/msallam/Desktop/Cloud project/Datasets/Alidbaba/feature_obj'
+sav_path = "C:/Users/mahmo/OneDrive/Desktop/kuljeet/Cloud project/Datasets/Alidbaba/feature_obj"
 arr = os.listdir(sav_path)
 #%%
 def save_object(obj, filename):

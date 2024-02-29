@@ -13,8 +13,8 @@ def get_Mid():
     script = "server_usage.csv"
     target = " used percent of cpus(%)"
     
-    
-    base_path = "C:/Users/msallam/Desktop/Cloud project/Datasets/Alidbaba/"
+    base_path = "C:/Users/mahmo/OneDrive/Desktop/kuljeet/Cloud project/Datasets/Alidbaba/"
+    # base_path = "C:/Users/msallam/Desktop/Cloud project/Datasets/Alidbaba/"
     info_path = base_path+"schema.csv"
     
     df_info =  pd.read_csv(info_path)
