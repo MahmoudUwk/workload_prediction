@@ -82,7 +82,7 @@ for  M_id, M_id_val in df_grouped_id:
 from sklearn.cluster import AgglomerativeClustering
 
 distance = 'l1'
-clustering = AgglomerativeClustering(n_clusters=4,affinity=distance,linkage='average').fit(X)
+clustering = AgglomerativeClustering(n_clusters=4,affinity=distance,linkage='single').fit(X)
 
 des = 'AgglomerativeClustering using '+distance
 plot_box(clustering.labels_,df,des,M_ids)
@@ -93,13 +93,13 @@ save_M_ids(clustering.labels_,df,M_ids,sav_path_TimeSeriesKMeans)
 
 from tslearn.clustering import TimeSeriesKMeans
 
-model = TimeSeriesKMeans(n_clusters=4, metric="dtw",max_iter=20)
-model.fit(np.expand_dims(X.T,axis=2))
-
+model = TimeSeriesKMeans(n_clusters=4, metric="softdtw",max_iter=20)
+model.fit(X)
+#%%
 des = 'TimeSeriesKMeans using Dynamic Time Warping'
 plot_box(model.labels_,df,des,M_ids)
 
-sav_path_TimeSeriesKMeans = os.path.join(sav_path,'TimeSeriesKMeans.obj')
+sav_path_TimeSeriesKMeans = os.path.join(sav_path,'TimeSeriesKMeans'+str(model.n_clusters)+'.obj')
 save_M_ids(model.labels_,df,M_ids,sav_path_TimeSeriesKMeans)
 #%%
 
@@ -182,15 +182,15 @@ plt.show()
 '''
 
     #%%
-    # import seaborn as sns
-    # df_corr = df[cols].corr()
-    # plt.figure(figsize=(10,7),dpi=180)
-    # xticks_font_size = 5
-    # # sns.set(font_scale=1.2)
-    # plt.rc('xtick', labelsize=xticks_font_size)
-    # plt.rc('ytick', labelsize=xticks_font_size)
-    # sns.heatmap(df_corr.round(2), annot=True, annot_kws={"size": 10})
-    # plt.savefig(os.path.join(sav_path,"corr.png"))
+# import seaborn as sns
+# df_corr = df[cols].corr()
+# plt.figure(figsize=(10,7),dpi=180)
+# xticks_font_size = 5
+# # sns.set(font_scale=1.2)
+# plt.rc('xtick', labelsize=xticks_font_size)
+# plt.rc('ytick', labelsize=xticks_font_size)
+# sns.heatmap(df_corr.round(2), annot=True, annot_kws={"size": 10})
+# plt.savefig(os.path.join(sav_path,"corr.png"))
 
 
 

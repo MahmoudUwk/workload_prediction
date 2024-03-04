@@ -41,10 +41,10 @@ class SaveBestModel(tf.keras.callbacks.Callback):
 def expand_dims(X):
     return np.expand_dims(X, axis = len(X.shape))
 
-def inverse_transf(X,scaler):
-    if 'var_' in list(scaler.__dict__.keys()):
-        return (np.sqrt(scaler.var_[0]) * X )+ scaler.mean_[0]
-    return np.array((X *(scaler.data_max_[0]-scaler.data_min_[0]) )+scaler.data_min_[0])
+# def inverse_transf(X,scaler):
+#     if 'var_' in list(scaler.__dict__.keys()):
+#         return (np.sqrt(scaler.var_[0]) * X )+ scaler.mean_[0]
+#     return np.array((X *(scaler.data_max_[0]-scaler.data_min_[0]) )+scaler.data_min_[0])
 
 def RMSE(test,pred):
     return np.sqrt(np.mean((np.squeeze(test) - np.squeeze(pred))**2))
@@ -58,17 +58,21 @@ def MAPE(test,pred):
 
 
 def get_LSTM_model(input_dim,output_dim,units,num_layers,name='LSTM_HP'):
+    # LSTM(100,dropout=0.3,recurrent_dropout=0.2)
+    dr_out = 0.25
+    r_dr = 0.2
     model = Sequential(name=name)
     flag_seq = True
     if num_layers == 1:
-        model.add(LSTM(units=units,  input_shape=input_dim,return_sequences = False))
+        model.add(LSTM(units=units,  input_shape=input_dim,return_sequences = False,dropout=dr_out,recurrent_dropout=r_dr))
     else:
-        model.add(LSTM(units=units,  input_shape=input_dim,return_sequences = True))
+        model.add(LSTM(units=units,  input_shape=input_dim,return_sequences = True,dropout=dr_out,recurrent_dropout=r_dr))
     for dummy in range(num_layers-1):
         if dummy == num_layers-2:
             flag_seq = False     
-        model.add(LSTM(units=units,return_sequences = flag_seq))
-    model.add(Dense(output_dim))
+        model.add(LSTM(units=units,return_sequences = flag_seq,dropout=dr_out,recurrent_dropout=r_dr))
+    # model.add(keras.layers.Attention())
+    model.add(Dense(output_dim,activation='relu'))
     return model
 
 def loadDatasetObj(fname):
@@ -81,8 +85,8 @@ def loadDatasetObj(fname):
 
 def log_results_LSTM(row,save_path):
 
-    save_name = 'results_LSTM_val2.csv'
-    cols = ["loss", "RMSE", "MAE", "MAPE(%)","seq","num_layers","units","best epoch","train_time(min)","norm_type"]
+    save_name = 'results_LSTM_val5.csv'
+    cols = ["loss", "RMSE", "MAE", "MAPE(%)","seq","num_layers","units","best epoch","train_time(min)","n_cluster"]
 
     df3 = pd.DataFrame(columns=cols)
     if not os.path.isfile(os.path.join(save_path,save_name)):
@@ -101,10 +105,8 @@ if not os.path.exists(sav_path):
     os.makedirs(sav_path)
 
 alg_name = 'LSTM'
-lr = 0.00002
+lr = 0.00005
 opt_chosen=Adam(learning_rate=lr)
-
-
 
 
 epochs_num = 1000
@@ -114,92 +116,112 @@ callback_falg = 1
 output_dim = 1
 batch_size_n = 2**9
 
+num_units = [16,32]#[35]#[8,10,15]
+num_layers_all = [1,4]
 
-num_units = [12,16,32,64]#[35]#[8,10,15]
-num_layers_all = [3,4,5]
+losses = ['mse']#,'mae']
+seq_length = 12#12
+val_split_size = 0.3
+cluster_nums = ['all']
+for cluster_num  in cluster_nums:
 
-norm_all = [0,1]
-norm_names = ['Standard','MinMax']
-losses = ['mse','mae']
-seq_length = 12
-for cluster_num  in range(4):
-    for norm_i in norm_all:
-        X_train,y_train,X_val,y_val,X_test ,y_test,scaler = get_dataset_alibaba_lstm(seq_length,norm_i,cluster_num)
-    
-        ind_rand = np.random.permutation(len(X_train))
-        X_train = X_train[ind_rand]
-        y_train = y_train[ind_rand]
-        y_test = inverse_transf(y_test,scaler)
-        input_dim=(X_train.shape[1],X_train.shape[2])
-        print(X_train.shape)
-        print(input_dim,output_dim)
-        y_train = expand_dims(expand_dims(y_train))
-        y_val = expand_dims(expand_dims(y_val))
-        if len(X_train.shape)<3:
-            X_train = expand_dims(X_train)
-            X_val = expand_dims(X_val)
-            X_test = expand_dims(X_test)
-        print(X_train.shape,y_train.shape,X_test.shape)
-        y_test = expand_dims(y_test)
-        for loss in losses:
-            for num_layers in num_layers_all:   
-                for units in num_units:
-                    
-                    model = get_LSTM_model(input_dim,output_dim,units,num_layers)         
-                    model.compile(optimizer=opt_chosen, loss=loss)
-                    print(model.summary())
-                    print('start training')
-                    start_train = time.time()
-                    if callback_falg:
-                        checkpoint = SaveBestModel()
-                        # callbacks_list = [checkpoint]
-                        callback_es = EarlyStopping(monitor='val_loss', patience=10)
-                        callbacks_list = [checkpoint,callback_es]
+    X_train,y_train,X_val,y_val,X_test ,y_test,scaler,clusters = get_dataset_alibaba_lstm(seq_length,cluster_num)
+
+    ind_rand = np.random.permutation(len(X_train))
+    X_train = X_train[ind_rand]
+    y_train = y_train[ind_rand]
+    y_test = y_test*scaler
+    input_dim=(X_train.shape[1],X_train.shape[2])
+    print(X_train.shape)
+    print(input_dim,output_dim)
+    y_train = expand_dims(expand_dims(y_train))
+    y_val = expand_dims(expand_dims(y_val))
+    if len(X_train.shape)<3:
+        X_train = expand_dims(X_train)
+        X_val = expand_dims(X_val)
+        X_test = expand_dims(X_test)
+    print(X_train.shape,y_train.shape,X_test.shape)
+
+    for loss in losses:
+        for num_layers in num_layers_all:   
+            for units in num_units:
+                
+                model = get_LSTM_model(input_dim,output_dim,units,num_layers)         
+                model.compile(optimizer=opt_chosen, loss=loss)
+                print(model.summary())
+                print('start training')
+                start_train = time.time()
+                if callback_falg:
+                    callbacks_list = [EarlyStopping(monitor='val_loss', patience=20, restore_best_weights=True)]
+                    if X_val.size ==0:
+                        history = model.fit(X_train, y_train, epochs=epochs_num, batch_size=batch_size_n, verbose=2, shuffle=True, validation_split=val_split_size,callbacks=callbacks_list)
+                    else:
                         history = model.fit(X_train, y_train, epochs=epochs_num, batch_size=batch_size_n, verbose=2, shuffle=True, validation_data=(X_val,y_val),callbacks=callbacks_list)
-                    else:
-                        history = model.fit(X_train, y_train, epochs=epochs_num, batch_size=batch_size_n, verbose=2, shuffle=True)#, validation_split=0.2,callbacks=callbacks_list)
-                    #%%
-                    end_train = time.time()
-                    print('End training')
-                    train_time = (end_train - start_train)/60
-                    if callback_falg:
-                        model.set_weights(checkpoint.best_weights)
-                        best_epoch =np.argmin(history.history['val_loss'])
-                    else:
-                        best_epoch = 0
-                    # model.save(filepath)
-                    #%%
-                    
-                    start_test = time.time()
-                    y_test_pred = inverse_transf(model.predict(X_test),scaler)
-                    end_test = time.time()
-                    test_time = end_test - start_test
-                    #%%
-                    rmse = RMSE(y_test,y_test_pred)
-                    mae = MAE(y_test,y_test_pred)
-                    mape = MAPE(y_test,y_test_pred)
-                    print(rmse,mae,mape)
-                    # best_epoch = epochs_num
-                    
-                    row = [loss,rmse,mae,mape,seq_length,num_layers,units,best_epoch,train_time,norm_names[norm_i]]
-             
-                    log_results_LSTM(row,sav_path)
-                    #%%
-                    # plt.figure(figsize=(10,7),dpi=180)
-                    # plt.plot(test_time_axis,1000*np.squeeze(y_test), color = 'red', linewidth=2.0, alpha = 0.6)
-                    # plt.plot(test_time_axis,1000*np.squeeze(y_test_pred), color = 'blue', linewidth=0.8)
-                    # plt.legend(['Actual','Predicted'])
-                    # plt.xlabel('Timestamp')
-                    # plt.xticks( rotation=25)
-                    # plt.ylabel('mW')
-                    # plt.title('Energy Prediction using '+alg_name)
-                    # plt.show()
-                    # info_loop = [seq,num_layers,units,best_epoch,datatype_opt]
-                    # name_sav = ""
-                    # for n in info_loop:
-                    #     name_sav = name_sav+str(n)+"_" 
-                    # plt.savefig(os.path.join(save_path,'LSTM'+name_sav+'.png'))
-                    # plt.close()
-                    # filename = os.path.join(save_path,alg_name+'.obj')
-                    # obj = {'y_test':y_test,'y_test_pred':y_test_pred}
-                    # save_object(obj, filename)
+                else:
+                    print('Stop')
+                #%%
+                end_train = time.time()
+                print('End training')
+                train_time = (end_train - start_train)/60
+                if callback_falg:
+                    # model.set_weights(checkpoint.best_weights)
+                    best_epoch =np.argmin(history.history['val_loss'])
+                else:
+                    best_epoch = 0
+                # model.save(filepath)
+                #%%
+                
+                start_test = time.time()
+                y_test_pred = model.predict(X_test)*scaler
+                end_test = time.time()
+                test_time = end_test - start_test
+                #%%
+                rmse = RMSE(y_test,y_test_pred)
+                mae = MAE(y_test,y_test_pred)
+                mape = MAPE(y_test,y_test_pred)
+                print(rmse,mae,mape)
+                # best_epoch = epochs_num
+                clus_des = str(cluster_num)+" out of " + str(len(clusters))
+                row = [loss,rmse,mae,mape,seq_length,num_layers,units,best_epoch,train_time,clus_des]
+         
+                log_results_LSTM(row,sav_path)
+                #%%
+                # plt.figure(figsize=(10,7),dpi=180)
+                # plt.plot(test_time_axis,1000*np.squeeze(y_test), color = 'red', linewidth=2.0, alpha = 0.6)
+                # plt.plot(test_time_axis,1000*np.squeeze(y_test_pred), color = 'blue', linewidth=0.8)
+                # plt.legend(['Actual','Predicted'])
+                # plt.xlabel('Timestamp')
+                # plt.xticks( rotation=25)
+                # plt.ylabel('mW')
+                # plt.title('Energy Prediction using '+alg_name)
+                # plt.show()
+                # info_loop = [seq,num_layers,units,best_epoch,datatype_opt]
+                # name_sav = ""
+                # for n in info_loop:
+                #     name_sav = name_sav+str(n)+"_" 
+                # plt.savefig(os.path.join(save_path,'LSTM'+name_sav+'.png'))
+                # plt.close()
+                # filename = os.path.join(save_path,alg_name+'.obj')
+                # obj = {'y_test':y_test,'y_test_pred':y_test_pred}
+                # save_object(obj, filename)
+#%%
+save_name = 'results_LSTM_val5.csv'
+clusters
+df = pd.read_csv(os.path.join(sav_path,save_name))
+
+
+RMSE_all = df.groupby(by='n_cluster').min()['RMSE'].mean() 
+l_u = []
+for n,cluster_dat in df.groupby(by='n_cluster'):
+    (a,b) = cluster_dat[['num_layers','units']].iloc[cluster_dat['RMSE'].argmin()]
+    l_u.append((a,b))
+
+
+
+
+
+
+
+
+
+
