@@ -67,6 +67,7 @@ def get_LSTM_model(input_dim,output_dim,units,num_layers,name='LSTM_HP'):
         model.add(LSTM(units=units,  input_shape=input_dim,return_sequences = False,dropout=dr_out,recurrent_dropout=r_dr))
     else:
         model.add(LSTM(units=units,  input_shape=input_dim,return_sequences = True,dropout=dr_out,recurrent_dropout=r_dr))
+    model.add(BatchNormalization())
     for dummy in range(num_layers-1):
         if dummy == num_layers-2:
             flag_seq = False     
@@ -116,8 +117,8 @@ callback_falg = 1
 output_dim = 1
 batch_size_n = 2**9
 
-num_units = [16,32]#[35]#[8,10,15]
-num_layers_all = [1,4]
+num_units = [32]#[35]#[8,10,15]
+num_layers_all = [2]
 
 losses = ['mse']#,'mae']
 seq_length = 12#12
