@@ -26,7 +26,7 @@ def MAPE(test,pred):
     ind = np.where(test!=0)[0].flatten()
     return 100*np.mean(np.abs(np.squeeze(pred[ind]) - np.squeeze(test[ind]))/np.abs(np.squeeze(test[ind])))
 
-seq_length = 12
+seq_length = 7
 cluster_num = 'all'
 X_train,y_train,X_val,y_val,X_test ,y_test,scaler,clusters = get_dataset_alibaba_lstm(seq_length,cluster_num)
 ind_rand = np.random.permutation(len(X_train))
@@ -45,12 +45,16 @@ if len(X_train.shape)<3:
     X_test = expand_dims(X_test)
 print(X_train.shape,y_train.shape,X_test.shape,X_val.shape)
 
-n_units = 64
+n_units = 128
 model = Sequential()
 model.add(LSTM(n_units, input_shape=(X_train.shape[1], X_train.shape[2])))
 model.add(RepeatVector(X_train.shape[1]))
-model.add(LSTM(n_units, return_sequences=False))
-model.add(TimeDistributed(Dense(n_units)))
+model.add(LSTM(n_units, return_sequences=True))
+model.add(LSTM(n_units, return_sequences=True))
+model.add(LSTM(n_units, return_sequences=True))
+# model.add(LSTM(n_units, return_sequences=True))
+# model.add(LSTM(n_units, return_sequences=True))
+model.add(TimeDistributed(Dense(n_units,activation='relu')))
 model.add(Flatten())
 model.add(Dense(1))
 model.compile(loss='mse', optimizer='adam')
@@ -68,7 +72,7 @@ else:
                             
 # history = model.fit(X_train, y_train, epochs=1000, batch_size=2**10, verbose=2, shuffle=True, validation_split=0.3,callbacks=callbacks_list)
 
-
+#%%
 y_test_pred = model.predict(X_test)*scaler
 
 
@@ -77,4 +81,25 @@ rmse = RMSE(y_test,y_test_pred)
 mae = MAE(y_test,y_test_pred)
 mape = MAPE(y_test,y_test_pred)
 
+base_path = "data/"
+sav_path = base_path+"results/lstm"
+
 print(rmse,mae,mape)
+def log_results_LSTM(row,save_path):
+    import pandas as pd
+    import os
+    save_name = 'encoder.csv'
+    cols = ["loss", "RMSE", "MAE", "MAPE(%)","seq","num_layers","units","best epoch","train_time(min)","n_cluster"]
+
+    df3 = pd.DataFrame(columns=cols)
+    if not os.path.isfile(os.path.join(save_path,save_name)):
+        df3.to_csv(os.path.join(save_path,save_name),index=False)
+        
+    df = pd.read_csv(os.path.join(save_path,save_name))
+    df.loc[len(df)] = row
+    print(df)
+    df.to_csv(os.path.join(save_path,save_name),mode='w', index=False,header=True)
+
+row = ['encoder',rmse,mae,mape,seq_length,0,n_units,0,0,0]
+ 
+log_results_LSTM(row,sav_path)

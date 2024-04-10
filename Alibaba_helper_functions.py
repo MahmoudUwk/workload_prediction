@@ -8,6 +8,41 @@ Created on Tue Feb 20 16:10:02 2024
 import pandas as pd
 import numpy as np
 from sklearn.cluster import KMeans
+import pickle
+
+def diff(test,pred):
+    return np.abs(test-pred)
+
+
+def expand_dims_st(X):
+    return np.expand_dims(X, axis = 0)
+
+
+def expand_dims(X):
+    return np.expand_dims(X, axis = len(X.shape))
+
+
+def RMSE(test,pred):
+    return np.sqrt(np.mean((np.squeeze(test) - np.squeeze(pred))**2))
+
+def MAE(test,pred):
+    return np.mean(np.abs(np.squeeze(pred) - np.squeeze(test)))
+
+def MAPE(test,pred):
+    ind = np.where(test!=0)[0].flatten()
+    return 100*np.mean(np.abs(np.squeeze(pred[ind]) - np.squeeze(test[ind]))/np.abs(np.squeeze(test[ind])))
+
+
+def loadDatasetObj(fname):
+    file_id = open(fname, 'rb') 
+    data_dict = pickle.load(file_id)
+    file_id.close()
+    return data_dict
+
+
+def save_object(obj, filename):
+    with open(filename, 'wb') as outp:  # Overwrites any existing file.
+        pickle.dump(obj, outp, pickle.HIGHEST_PROTOCOL)
 
 def get_Mid():
     script = "server_usage.csv"

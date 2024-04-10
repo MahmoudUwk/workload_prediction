@@ -5,11 +5,9 @@ import pickle
 import os
 from tsfresh import extract_features
 # from tsfresh.utilities.dataframe_functions import roll_time_series
-def save_object(obj, filename):
-    with open(filename, 'wb') as outp:  # Overwrites any existing file.
-        pickle.dump(obj, outp, pickle.HIGHEST_PROTOCOL)
+from Alibaba_helper_functions import loadDatasetObj,save_object
     
-base_path = "C:/Users/msallam/Desktop/Cloud project/Datasets/Alidbaba/"
+base_path = "data/"
 # base_path = "C:/Users/mahmo/OneDrive/Desktop/kuljeet/Cloud project/Datasets/Alidbaba/"
 script = "server_usage.csv"
 target = " used percent of cpus(%)"
@@ -50,7 +48,7 @@ for M_id, M_id_val in grouped:
     print(M_id)
     for ind in range(len(M_id_val)-seq_length):
         x = M_id_val.loc[ind:ind+seq_length-1].copy()
-        x['id'] = [(M_id[0],ind)]*seq_length
+        x['id'] = [(M_id,ind)]*seq_length
         if ind == 0:
             df_dataset_rolled = x.copy()     
         else:
@@ -63,11 +61,11 @@ for M_id, M_id_val in grouped:
     
     df_dataset_rolled = df_dataset_rolled.drop([' machine id'], axis=1)
     df_features = extract_features(df_dataset_rolled, column_id="id", column_sort=" timestamp",n_jobs = 1).dropna(axis=1, how='all')
-    df_features['M_id'] = [M_id[0]]*len(df_features)
+    df_features['M_id'] = [M_id]*len(df_features)
     # df_features = df_features.set_index('M_id')
     dict_Mid = {"X":df_features,"y":y}
     assert(len(y)==len(df_features))
-    save_object(dict_Mid, os.path.join(sav_path,'X_Y_M_id_'+str(M_id[0])+'.obj'))
+    save_object(dict_Mid, os.path.join(sav_path,'X_Y_M_id_'+str(M_id)+'.obj'))
 
 
 

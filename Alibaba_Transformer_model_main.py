@@ -6,11 +6,11 @@ import time
 from keras.layers import  LSTM,Dense#,Bidirectional
 from keras.models import  Sequential #,load_model
 from keras.optimizers import Adam
-from keras.callbacks import ModelCheckpoint
+from keras.callbacks import ModelCheckpoint,EarlyStopping
 import tensorflow as tf
 import os
 import keras
-from keras.callbacks import EarlyStopping
+# from keras.callbacks import EarlyStopping
 import pickle
 # from Alibaba_helper_functions import get_Mid
 from Alibaba_fet_features_LSTM import get_dataset_alibaba_lstm
@@ -50,14 +50,14 @@ def log_results_LSTM(row,save_path):
     df.to_csv(os.path.join(save_path,save_name),mode='w', index=False,header=True)
     
 #%%
-base_path = "C:/Users/mahmo/OneDrive/Desktop/kuljeet/Cloud project/Datasets/Alidbaba/"
+base_path = "data/"
 
 sav_path = base_path+"results/lstm"
 if not os.path.exists(sav_path):
     os.makedirs(sav_path)
 
 alg_name = 'Transformer'
-lr = 0.0002
+lr = 0.0001
 opt_chosen=Adam(learning_rate=lr)
 
 epochs_num = 500
@@ -69,11 +69,11 @@ batch_size_n = 2**9
 
 mlp_units_all = [[64]]#[35]#[8,10,15]
 num_transformer_blocks_all = [2]
-head_size_all = [32]
-num_heads_all = [2]
+head_size_all = [64]
+num_heads_all = [4]
 losses = ['mse']#,'mae']
-seq_length_all = [7]
-cluster_nums = ['all'] #range(4)
+seq_length_all = [3]
+cluster_nums = range(4) #['all'] #
 val_split_size = 0.3
 for seq_length in seq_length_all:
     for cluster_num  in cluster_nums:
@@ -156,11 +156,11 @@ for seq_length in seq_length_all:
                             print(rmse,mae,mape)
 
 #%%
-# save_name = 'results_transformer_all_data.csv'
-# clusters
-# df = pd.read_csv(os.path.join(sav_path,save_name))
-
-
+save_name = 'results_transformer_all_data.csv'
+clusters
+df = pd.read_csv(os.path.join(sav_path,save_name))
+# print(df['RMSE'].min())
+print(df.sort_values(by=['RMSE'])[:5])
 # RMSE_all = df.groupby(by='n_cluster').min()['RMSE'].mean() 
 # print(RMSE_all)
 # l_u = []

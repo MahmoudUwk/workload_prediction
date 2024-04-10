@@ -5,9 +5,7 @@ import matplotlib.pyplot as plt
 import pickle
 import os
 
-def save_object(obj, filename):
-    with open(filename, 'wb') as outp:  # Overwrites any existing file.
-        pickle.dump(obj, outp, pickle.HIGHEST_PROTOCOL)
+from Alibaba_helper_functions import loadDatasetObj,save_object
         
         
 def save_M_ids(M_id_labels,df,M_ids,sav_path):
@@ -39,13 +37,13 @@ def plot_box(M_id_labels,df,des,M_ids):
 def df_from_M_id(df,M):
     return df.loc[df[" machine id"].isin(M)][" used percent of cpus(%)"]
 
-sav_path = "C:/Users/mahmo/OneDrive/Desktop/kuljeet/Cloud project/Datasets/Alidbaba/features_lstm"
+sav_path = "data/features_lstm/"
 script = "server_usage.csv"
 target = " used percent of cpus(%)"
 pd.set_option('display.expand_frame_repr', False)
 pd.options.display.max_columns = None
 
-base_path = "C:/Users/mahmo/OneDrive/Desktop/kuljeet/Cloud project/Datasets/Alidbaba/"
+base_path = "data/"
 # base_path = "C:/Users/msallam/Desktop/Cloud project/Datasets/Alidbaba/"
 info_path = base_path+"schema.csv"
 
@@ -75,7 +73,7 @@ c_i = 0
 for  M_id, M_id_val in df_grouped_id:
     M_id_val = np.array(M_id_val.sort_values(by=[' timestamp']).reset_index(drop=True).drop([" machine id"," timestamp"],axis=1))[:min_len].copy()
     X[c_i,:] = np.squeeze(M_id_val)
-    M_ids[c_i] = M_id
+    M_ids[c_i] = M_id[0]
     c_i+=1
 
 #%%

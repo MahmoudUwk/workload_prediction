@@ -3,19 +3,7 @@ import pandas as pd
 import numpy as np
 import pickle
 import os
-# from matplotlib import pyplot as plt
-# from tsfresh.utilities.dataframe_functions import roll_time_series
-
-def loadDatasetObj(fname):
-    file_id = open(fname, 'rb') 
-    data_dict = pickle.load(file_id)
-    file_id.close()
-    return data_dict
-
-
-def save_object(obj, filename):
-    with open(filename, 'wb') as outp:  # Overwrites any existing file.
-        pickle.dump(obj, outp, pickle.HIGHEST_PROTOCOL)
+from Alibaba_helper_functions import loadDatasetObj,save_object
         
 def sliding_windows2d_lstm(data, seq_length,target_col_num):
     
@@ -24,14 +12,14 @@ def sliding_windows2d_lstm(data, seq_length,target_col_num):
     #print(x.shape,y.shape)
     for ind in range(len(x)):
         #print((i,(i+seq_length)))
-        x[ind,:,:] = np.squeeze(data[ind:ind+seq_length,:])
+        x[ind,:,:] = data[ind:ind+seq_length,:]
         #print(data[ind+seq_length:ind+seq_length+k_step])
         y[ind] = data[ind+seq_length:ind+seq_length+1,target_col_num][0]
     return x,y
     
 # 
 # base_path = "C:/Users/msallam/Desktop/Cloud project/Datasets/Alidbaba/"
-def list_to_array(lst,seq_length,n_feat=6):
+def list_to_array(lst,seq_length,n_feat):
     shapes = 0
     for sub_list in lst:
         shapes += len(sub_list)
@@ -51,7 +39,7 @@ def list_to_array(lst,seq_length,n_feat=6):
 
 def df_from_M_id(df,M):
     return df.loc[df[" machine id"].isin(M)]
-def get_dataset_alibaba_lstm(seq_length,cluster_num):
+def get_dataset_alibaba_lstm(seq_length,cluster_num,num_feat=6):
     base_path = "C:/Users/mahmo/OneDrive/Desktop/kuljeet/Cloud project/Datasets/Alidbaba/"
     
     sav_path = base_path+"features_lstm"
@@ -62,10 +50,11 @@ def get_dataset_alibaba_lstm(seq_length,cluster_num):
     script = "server_usage.csv"
     target = " used percent of cpus(%)"
     cols = [' used percent of cpus(%)',
-           ' used percent of memory(%)', ' used percent of disk space(%)',
-           ' linux cpu load average of 1 minute',
-           ' linux cpu load average of 5 minute',
-           ' linux cpu load average of 15 minute']
+            ' used percent of memory(%)', ' used percent of disk space(%)',
+            ' linux cpu load average of 1 minute',
+            ' linux cpu load average of 5 minute',
+            ' linux cpu load average of 15 minute'][:num_feat]
+    # cols = [' used percent of cpus(%)']
     pd.set_option('display.expand_frame_repr', False)
     pd.options.display.max_columns = None
     
@@ -84,7 +73,7 @@ def get_dataset_alibaba_lstm(seq_length,cluster_num):
     if cluster_num !='all':
         clus_obj = 'TimeSeriesKMeans4.obj'
         M_ids_clustered = loadDatasetObj(os.path.join("C:/Users/mahmo/OneDrive/Desktop/kuljeet/Cloud project/Datasets/Alidbaba/features_lstm",clus_obj))
-        print([len(inds) for inds in M_ids_clustered])
+        # print([len(inds) for inds in M_ids_clustered])
         clusters = [len(inds) for inds in M_ids_clustered]#len(M_ids_clustered)
         M_ids_clustered = M_ids_clustered[cluster_num]
         df = df_from_M_id(df,M_ids_clustered)
@@ -107,8 +96,8 @@ def get_dataset_alibaba_lstm(seq_length,cluster_num):
     grouped = df_normalized.groupby([" machine id"])
     
     #%%
-    train_per_and_val = 0.7
-    val_per = 0*train_per_and_val
+    train_per_and_val = 0.8
+    val_per = 0.3*train_per_and_val
     train_per = train_per_and_val - val_per
     sav_path2 = base_path+"features_lstm/"+"LSTM_M_id_features"
     if not os.path.exists(sav_path2):
@@ -124,7 +113,7 @@ def get_dataset_alibaba_lstm(seq_length,cluster_num):
     y_test_all = []
     for M_id, M_id_val in grouped:
         # print(M_id)
-        M_id_val = M_id_val.sort_values(by=[' timestamp']).reset_index(drop=True).drop([" machine id"," timestamp"],axis=1)
+        M_id_val = M_id_val.sort_values(by=[' timestamp']).reset_index(drop=True).drop([" machine id"," timestamp"],axis=1)[cols]
         
         len_data = M_id_val.shape[0]
         train_len = int(train_per*len_data)
@@ -154,7 +143,7 @@ def get_dataset_alibaba_lstm(seq_length,cluster_num):
         # save_object(dict_Mid, os.path.join(sav_path2,'X_Y_LSTM_M_id_'+str(M_id)+'.obj'))
     
 
-    return list_to_array(X_train_all,seq_length),list_to_array(y_train_all,0),list_to_array(X_val_all,seq_length),list_to_array(y_val_all,0),list_to_array(X_test_all,seq_length),list_to_array(y_test_all,0),scaler,clusters
+    return list_to_array(X_train_all,seq_length,len(cols)),list_to_array(y_train_all,0,len(cols)),list_to_array(X_val_all,seq_length,len(cols)),list_to_array(y_val_all,0,len(cols)),list_to_array(X_test_all,seq_length,len(cols)),list_to_array(y_test_all,0,len(cols)),scaler,clusters
 
 
 

@@ -38,7 +38,7 @@ def build_model(
     for dim in mlp_units:
         x = layers.Dense(dim, activation="relu")(x)
         x = layers.Dropout(mlp_dropout)(x)
-        outputs = layers.Dense(1)(x)
+        outputs = layers.Dense(1,activation='sigmoid')(x)
     # outputs = layers.Dense(n_classes, activation="softmax")(x)
     
     return keras.Model(inputs, outputs)

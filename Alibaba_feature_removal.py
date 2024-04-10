@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 Created on Tue Feb 20 11:31:26 2024
-
+df roll
+load feat
+feature removal
 @author: msallam
 """
 import numpy as np
@@ -11,25 +13,18 @@ from feature_selector import FeatureSelector
 import pickle
 from Alibaba_helper_functions import get_Mid
 import os
-def loadDatasetObj(fname):
-    file_id = open(fname, 'rb') 
-    data_dict = pickle.load(file_id)
-    file_id.close()
-    return data_dict
+from Alibaba_helper_functions import loadDatasetObj,save_object
 
-def save_object(obj, filename):
-    with open(filename, 'wb') as outp:  # Overwrites any existing file.
-        pickle.dump(obj, outp, pickle.HIGHEST_PROTOCOL)
-
-base_path = "C:/Users/mahmo/OneDrive/Desktop/kuljeet/Cloud project/Datasets/Alidbaba"
+base_path = "data/Datasets/"
 # base_path = "C:/Users/msallam/Desktop/Cloud project/Datasets/Alidbaba/"
-sav_path = base_path+"Proccessed_Alibaba"
+sav_path = 'C:/Users/mahmo/OneDrive/Desktop/kuljeet/Cloud project/Datasets/Alidbaba/Proccessed_Alibaba'
 if not os.path.exists(sav_path):
     os.makedirs(sav_path)
     
-M_ids = get_Mid()
-data_path = 'C:/Users/msallam/Desktop/Cloud project/Datasets/Alidbaba/feature_obj'
-filename = os.path.join(data_path,'X_Y_alibaba.obj')
+clus_obj = 'TimeSeriesKMeans4.obj'
+M_ids = loadDatasetObj(os.path.join("C:/Users/mahmo/OneDrive/Desktop/kuljeet/Cloud project/Datasets/Alidbaba/features_lstm",clus_obj))
+data_path = 'data/feature_obj'
+filename = os.path.join('C:/Users/mahmo/OneDrive/Desktop/kuljeet/Cloud project/Datasets/Alidbaba/feature_obj','X_Y_alibaba.obj')
 df_original = loadDatasetObj(filename)
 # df['X_train'] = df['X_train'].set_index("M_id")
 
@@ -58,12 +53,16 @@ for counter,M_id in enumerate(M_ids):
     # fs.plot_unique()
     #%%
     fs.identify_collinear(correlation_threshold=0.98)
+    # fs.identify_collinear(correlation_threshold=0.9)
     correlated_features = fs.ops['collinear']
     # print(correlated_features[:5])
     # fs.plot_collinear()
     #%%
-    fs.identify_zero_importance(task = 'regression', eval_metric = 'auc', n_iterations = 10, early_stopping = True)
+    fs.identify_zero_importance(task = 'regression', eval_metric = 'auc', n_iterations = 5, early_stopping = True)
     zero_importance_f = fs.ops['zero_importance']
+    # fs.identify_low_importance(0.95)
+    # low_importance_f = fs.ops['low_importance']
+    
     print('LGBM finished-------------------')
     #%%
     all_to_remove = fs.check_removal()

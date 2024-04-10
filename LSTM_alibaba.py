@@ -59,20 +59,18 @@ def MAPE(test,pred):
 
 def get_LSTM_model(input_dim,output_dim,units,num_layers,name='LSTM_HP'):
     # LSTM(100,dropout=0.3,recurrent_dropout=0.2)
-    dr_out = 0.25
-    r_dr = 0.2
+    dr_out = 0
+
     model = Sequential(name=name)
     flag_seq = True
     if num_layers == 1:
-        model.add(LSTM(units=units,  input_shape=input_dim,return_sequences = False,dropout=dr_out,recurrent_dropout=r_dr))
+        model.add(LSTM(units=units,  input_shape=input_dim,return_sequences = False))
     else:
-        model.add(LSTM(units=units,  input_shape=input_dim,return_sequences = True,dropout=dr_out,recurrent_dropout=r_dr))
-    model.add(BatchNormalization())
+        model.add(LSTM(units=units,  input_shape=input_dim,return_sequences = True))
     for dummy in range(num_layers-1):
         if dummy == num_layers-2:
             flag_seq = False     
-        model.add(LSTM(units=units,return_sequences = flag_seq,dropout=dr_out,recurrent_dropout=r_dr))
-    # model.add(keras.layers.Attention())
+        model.add(LSTM(units=units,return_sequences = flag_seq))
     model.add(Dense(output_dim,activation='relu'))
     return model
 
@@ -99,7 +97,7 @@ def log_results_LSTM(row,save_path):
     df.to_csv(os.path.join(save_path,save_name),mode='w', index=False,header=True)
     
 #%%
-base_path = "C:/Users/mahmo/OneDrive/Desktop/kuljeet/Cloud project/Datasets/Alidbaba/"
+base_path = "data/"
 
 sav_path = base_path+"results/lstm"
 if not os.path.exists(sav_path):
@@ -117,8 +115,8 @@ callback_falg = 1
 output_dim = 1
 batch_size_n = 2**9
 
-num_units = [32]#[35]#[8,10,15]
-num_layers_all = [2]
+num_units = [64]#[35]#[8,10,15]
+num_layers_all = [5]
 
 losses = ['mse']#,'mae']
 seq_length = 12#12
@@ -153,7 +151,7 @@ for cluster_num  in cluster_nums:
                 print('start training')
                 start_train = time.time()
                 if callback_falg:
-                    callbacks_list = [EarlyStopping(monitor='val_loss', patience=20, restore_best_weights=True)]
+                    callbacks_list = [EarlyStopping(monitor='val_loss', patience=50, restore_best_weights=True)]
                     if X_val.size ==0:
                         history = model.fit(X_train, y_train, epochs=epochs_num, batch_size=batch_size_n, verbose=2, shuffle=True, validation_split=val_split_size,callbacks=callbacks_list)
                     else:
@@ -182,7 +180,7 @@ for cluster_num  in cluster_nums:
                 mape = MAPE(y_test,y_test_pred)
                 print(rmse,mae,mape)
                 # best_epoch = epochs_num
-                clus_des = str(cluster_num)+" out of " + str(len(clusters))
+                clus_des = str(cluster_num)+" out of " + str(clusters)
                 row = [loss,rmse,mae,mape,seq_length,num_layers,units,best_epoch,train_time,clus_des]
          
                 log_results_LSTM(row,sav_path)
@@ -209,13 +207,13 @@ for cluster_num  in cluster_nums:
 save_name = 'results_LSTM_val5.csv'
 clusters
 df = pd.read_csv(os.path.join(sav_path,save_name))
+print(df['RMSE'])
 
-
-RMSE_all = df.groupby(by='n_cluster').min()['RMSE'].mean() 
-l_u = []
-for n,cluster_dat in df.groupby(by='n_cluster'):
-    (a,b) = cluster_dat[['num_layers','units']].iloc[cluster_dat['RMSE'].argmin()]
-    l_u.append((a,b))
+# RMSE_all = df.groupby(by='n_cluster').min()['RMSE'].mean() 
+# l_u = []
+# for n,cluster_dat in df.groupby(by='n_cluster'):
+#     (a,b) = cluster_dat[['num_layers','units']].iloc[cluster_dat['RMSE'].argmin()]
+#     l_u.append((a,b))
 
 
 

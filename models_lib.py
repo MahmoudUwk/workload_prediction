@@ -1,20 +1,19 @@
 import numpy as np
 
-from sklearn.gaussian_process.kernels import DotProduct, WhiteKernel,RBF
-
 def reg_all(X_train,y_train,X_test,reg_model):
+    from sklearn.gaussian_process.kernels import DotProduct, WhiteKernel,RBF
     from sklearn.gaussian_process import GaussianProcessRegressor
-    from sklearn.ensemble import GradientBoostingRegressor
+    from sklearn.ensemble import GradientBoostingRegressor,HistGradientBoostingRegressor
     from sklearn.svm import SVR
     from sklearn.linear_model import LinearRegression
     reg_models_names = ["linear_reg","svr_reg","GPR_reg","GBT_reg"]
     ind = [c for c,ele in enumerate(reg_models_names) if ele==reg_model][0]
-    regs_all = [LinearRegression(), SVR(kernel= 'linear'),GaussianProcessRegressor(kernel=DotProduct()), 
-                GradientBoostingRegressor(n_estimators=500,max_depth=10)]
+    regs_all = [LinearRegression(), SVR(kernel= 'linear'),GaussianProcessRegressor(kernel=DotProduct() + WhiteKernel()), 
+                HistGradientBoostingRegressor()]
     reg = regs_all[ind]
     reg.fit(X_train, y_train)
     
-    return reg,reg.predict(X_train),reg.predict(X_test)
+    return reg#,reg.predict(X_train),reg.predict(X_test)
 
 
 
@@ -25,12 +24,12 @@ def class_all(X_train,y_train,X_test,class_model):
     # from sklearn.neural_network import MLPClassifier
     from sklearn.naive_bayes import GaussianNB
     from sklearn.ensemble import RandomForestClassifier
-    from sklearn.ensemble import GradientBoostingClassifier
+    from sklearn.ensemble import GradientBoostingClassifier,HistGradientBoostingClassifier
     class_models_names = ["KNN","MLP","GNB","RDF","GBT"]
     ind = [c for c,ele in enumerate(class_models_names) if ele==class_model][0]
     class_all = [KNeighborsClassifier(n_neighbors=3), "keras",
-                GaussianNB(),RandomForestClassifier(n_estimators=500,max_depth=2),
-                GradientBoostingClassifier(n_estimators=500, learning_rate=1.0,max_depth=1)]
+                GaussianNB(),RandomForestClassifier(n_estimators=50,max_depth=12),
+                HistGradientBoostingClassifier()]
     classifier = class_all[ind]
     if class_model == "MLP":
         classifier,y_test_pred = MLP_classifier(X_train,y_train,X_test)

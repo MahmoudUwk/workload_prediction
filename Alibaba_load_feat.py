@@ -7,19 +7,11 @@ Created on Fri Feb 16 15:23:37 2024
 import pickle
 import os
 import pandas as pd
+from Alibaba_helper_functions import loadDatasetObj,save_object
 # sav_path = 'C:/Users/msallam/Desktop/Cloud project/Datasets/Alidbaba/feature_obj'
-sav_path = "C:/Users/mahmo/OneDrive/Desktop/kuljeet/Cloud project/Datasets/Alidbaba/feature_obj"
+sav_path = "data/feature_obj"
 arr = os.listdir(sav_path)
 #%%
-def save_object(obj, filename):
-    with open(filename, 'wb') as outp:  # Overwrites any existing file.
-        pickle.dump(obj, outp, pickle.HIGHEST_PROTOCOL)
-        
-def loadDatasetObj(fname):
-    file_id = open(fname, 'rb') 
-    data_dict = pickle.load(file_id)
-    file_id.close()
-    return data_dict
 
 test_per = 0.2
 for counter,file_i in enumerate(arr):
