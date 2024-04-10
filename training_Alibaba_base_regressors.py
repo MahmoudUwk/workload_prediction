@@ -1,76 +1,92 @@
 
 import numpy as np
-from sklearn.preprocessing import MinMaxScaler
-from models_lib import reg_all,class_all
+
 from sklearn.gaussian_process.kernels import DotProduct, WhiteKernel,RBF
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.ensemble import GradientBoostingRegressor,HistGradientBoostingRegressor
 from sklearn.svm import SVR
 from sklearn.linear_model import LinearRegression
-from Alibaba_helper_functions import loadDatasetObj,save_object,diff,RMSE,expand_dims,expand_dims_st
+from Alibaba_helper_functions import RMSE,save_object,flatten,get_data_stat
 import os
+# from gpflow.mean_functions import Constant
+# from gpflow.utilities import positive, print_summary
+
+# from sklearn.gaussian_process.kernels import DotProduct, WhiteKernel,RBF
+# from sklearn.gaussian_process import GaussianProcessRegressor
+# from sklearn.ensemble import GradientBoostingRegressor,HistGradientBoostingRegressor
+from sklearn.svm import SVR
+from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import RandomForestRegressor
+# import gpflow
+import time
 #%%
-# base_path = "data/"
-models = ["linear_reg","svr_reg","GBT_reg"]#,"GPR_reg"]
-class_models_names = ["KNN","GNB","RDF","GBT","MLP"]
-data_path = 'C:/Users/mahmo/OneDrive/Desktop/kuljeet/Cloud project/Datasets/Alidbaba/Proccessed_Alibaba'
-sav_path = "C:/Users/mahmo/OneDrive/Desktop/kuljeet/Cloud project/Datasets/Alidbaba/"
-file_read  = os.listdir(data_path)
-scaler_norm = 100
+data_path = 'data/feature_statistical_proccessed/X_Y_alibaba_train_val_test_after_feature_removal.obj'
+sav_path = 'data/models/regular_regressors'
+if not os.path.exists(sav_path):
+    os.makedirs(sav_path)
+
 RMSE_opt_all = []
 test_set_len = []
-for M_id,file_M_id in enumerate(file_read):
-    reg_trained_M_id = []
-    # class_trained_M_id  = []
-    print(M_id,file_M_id)
-    filename = os.path.join(data_path,file_M_id)
-    df = loadDatasetObj(filename)
-    if 'M_id' in df['X_train'].columns:
-        X_train = np.array(df['X_train'].drop(['M_id'],axis=1))
-    else:
-        X_train = np.array(df['X_train'])
-    y_train = df['y_train']/scaler_norm
+
+X_train,y_train,X_test,y_test,scaler,df_test_xy = get_data_stat(data_path)
+#%%
+
+
+regs_all = [LinearRegression(), SVR(kernel= 'linear'),HistGradientBoostingRegressor()]
+
+RMSE_local = []
+rmse_list = []
+Mids_test = []
+y_test_pred_list = []
+y_test_list = []
+save_pred_save = 'data/pred_results_all'
+for reg in regs_all:
+    start_train = time.time()
+    # if reg =='GPflow':
+    #     k = gpflow.kernels.Matern52(input_dim=X_train.shape[1])
+    #     m = gpflow.models.GPR(data=(X_train, y_train), mean_function=Constant(np.mean(y_train)), kernel=k, noise_variance=1)
+    #     opt = gpflow.optimizers.Scipy()
+    #     opt.minimize(m.training_loss, m.trainable_variables)
+    #     print_summary(m)
+    #     end_train = time.time()
+    #     y_pred_opt, _ = m.predict_f(X_train)
+    # else: 
+    reg.fit(X_train, y_train)
+    end_train = time.time()
+    train_time = (end_train - start_train)/60
     
-    if 'M_id' in df['X_train'].columns:
-        X_test = np.array(df['X_test'].drop(['M_id'],axis=1))
-    else:
-        X_test = np.array(df['X_test'])
     
-    y_test = df['y_test']/scaler_norm
-    test_set_len.append(X_test.shape[0])
-    print(X_train.shape,X_test.shape)
-    #%%
-    scaler = MinMaxScaler()
-    scaler.fit(X_train)
-    X_train = scaler.transform(X_train)
-    X_test = scaler.transform(X_test)
-    #%%
-    from sklearn.gaussian_process.kernels import DotProduct, WhiteKernel,RBF
-    from sklearn.gaussian_process import GaussianProcessRegressor
-    from sklearn.ensemble import GradientBoostingRegressor,HistGradientBoostingRegressor
-    from sklearn.svm import SVR
-    from sklearn.linear_model import LinearRegression
-    from sklearn.ensemble import RandomForestRegressor
-    # regs_all = [RandomForestRegressor(max_depth=10),LinearRegression(), SVR(kernel= 'linear')]#, 
-                #HistGradientBoostingRegressor()]
-    regs_all = [RandomForestRegressor()]
-    RMSE_local = []
-    for reg in regs_all:
-        reg.fit(X_train, y_train)
-        y_pred_opt = reg.predict(X_test)
+    y_pred_opt = reg.predict(X_test)
     
-        
-        RMSE_local.append(RMSE(y_pred_opt*scaler_norm,y_test*scaler_norm))
-    RMSE_opt_all.append(RMSE_local)
+    
+    rmse_i = RMSE(y_pred_opt,y_test)
+    score_i = reg.score(X_test,y_test)
+    x_test_all_list = []
+    start_test = time.time()
+    for m_id, group_val in  df_test_xy.groupby(["M_id"]):
+        Mids_test.append(m_id)
+        x_test_i = scaler.transform(np.array(group_val.drop(['y','M_id'],axis=1)))
+        x_test_all_list.append(x_test_i)
+        y_test_list.append(np.array(group_val['y']))
+        pred_i = reg.predict(x_test_i)
+        y_test_pred_list.append(pred_i)
+        rmse_i_list = RMSE(np.array(group_val['y']),pred_i)
+        rmse_list.append(rmse_i_list)
+    end_test = time.time()
+    test_time = end_test - start_test
+    obj = {'test_time':test_time,'train_time':train_time,'y_test':y_test_list,'y_test_pred':y_test_pred_list,'rmse_list':np.array(rmse_list),'Mids_test':Mids_test}
+    filename = os.path.join(save_pred_save,type(reg).__name__+'.obj')
+    save_object(obj, filename)
+    
+    print("rmse_i:",rmse_i)
+    print("np.mean(rmse_list):",RMSE(flatten(y_test_list),flatten(y_test_pred_list)))
+    RMSE_local.append(rmse_i)
+RMSE_opt_all.append(RMSE_local)
 #%%
 RMSE_opt_all = np.array(RMSE_opt_all)
-per = np.array(test_set_len)/sum(test_set_len)
-per = np.expand_dims(per, axis=1)
-# clusters= [459, 13, 205, 633]
 
-RMSE_all =np.sum( np.array(RMSE_opt_all)*per,axis=0)
 
-print(RMSE_all)
+print(RMSE_opt_all)
 
 
 

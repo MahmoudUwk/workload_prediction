@@ -8,7 +8,7 @@ def reg_all(X_train,y_train,X_test,reg_model):
     from sklearn.linear_model import LinearRegression
     reg_models_names = ["linear_reg","svr_reg","GPR_reg","GBT_reg"]
     ind = [c for c,ele in enumerate(reg_models_names) if ele==reg_model][0]
-    regs_all = [LinearRegression(), SVR(kernel= 'linear'),GaussianProcessRegressor(kernel=DotProduct() + WhiteKernel()), 
+    regs_all = [LinearRegression(), SVR(kernel= 'linear'),GaussianProcessRegressor(copy_X_train=False,kernel=DotProduct() + WhiteKernel()), 
                 HistGradientBoostingRegressor()]
     reg = regs_all[ind]
     reg.fit(X_train, y_train)

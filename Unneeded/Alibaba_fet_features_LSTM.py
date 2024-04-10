@@ -40,7 +40,7 @@ def list_to_array(lst,seq_length,n_feat):
 def df_from_M_id(df,M):
     return df.loc[df[" machine id"].isin(M)]
 def get_dataset_alibaba_lstm(seq_length,cluster_num,num_feat=6):
-    base_path = "C:/Users/mahmo/OneDrive/Desktop/kuljeet/Cloud project/Datasets/Alidbaba/"
+    base_path = "data/"
     
     sav_path = base_path+"features_lstm"
     if not os.path.exists(sav_path):
@@ -72,7 +72,7 @@ def get_dataset_alibaba_lstm(seq_length,cluster_num,num_feat=6):
     clusters = 0
     if cluster_num !='all':
         clus_obj = 'TimeSeriesKMeans4.obj'
-        M_ids_clustered = loadDatasetObj(os.path.join("C:/Users/mahmo/OneDrive/Desktop/kuljeet/Cloud project/Datasets/Alidbaba/features_lstm",clus_obj))
+        M_ids_clustered = loadDatasetObj(os.path.join("data/features_lstm",clus_obj))
         # print([len(inds) for inds in M_ids_clustered])
         clusters = [len(inds) for inds in M_ids_clustered]#len(M_ids_clustered)
         M_ids_clustered = M_ids_clustered[cluster_num]

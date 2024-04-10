@@ -13,52 +13,38 @@ from feature_selector import FeatureSelector
 import pickle
 from Alibaba_helper_functions import get_Mid
 import os
-from Alibaba_helper_functions import loadDatasetObj,save_object
+from Alibaba_helper_functions import loadDatasetObj,save_object,drop_col_nan_inf
 
-base_path = "data/Datasets/"
+base_path = "data/"
 # base_path = "C:/Users/msallam/Desktop/Cloud project/Datasets/Alidbaba/"
-sav_path = 'C:/Users/mahmo/OneDrive/Desktop/kuljeet/Cloud project/Datasets/Alidbaba/Proccessed_Alibaba'
+data_path = base_path+"feature_statistical_proccessed"
+sav_path = data_path
 if not os.path.exists(sav_path):
     os.makedirs(sav_path)
-    
-clus_obj = 'TimeSeriesKMeans4.obj'
-M_ids = loadDatasetObj(os.path.join("C:/Users/mahmo/OneDrive/Desktop/kuljeet/Cloud project/Datasets/Alidbaba/features_lstm",clus_obj))
-data_path = 'data/feature_obj'
-filename = os.path.join('C:/Users/mahmo/OneDrive/Desktop/kuljeet/Cloud project/Datasets/Alidbaba/feature_obj','X_Y_alibaba.obj')
+filename_features_remove = os.path.join(sav_path,'all_to_remove.obj')
+run_removal = 0
+
+filename = os.path.join(data_path,'X_Y_alibaba_all.obj')
 df_original = loadDatasetObj(filename)
-# df['X_train'] = df['X_train'].set_index("M_id")
 
-def drop_col_nan_inf(df):
-    df.replace([np.inf, -np.inf], np.nan, inplace=True)
-    return df.dropna(axis=1)
+df = df_original['XY_all'].drop(['y'], axis=1)
+feat_all = set(list(df.columns))
+df = drop_col_nan_inf(df)
+feat_nan = list(feat_all-set(list(df.columns)))
+y = np.array(df_original['XY_all']['y'])
 #%%
-for counter,M_id in enumerate(M_ids):
-    
-    ind_Mid = np.where(df_original['X_train']["M_id"].isin(M_id))[0]
-    
-    df_train = df_original['X_train'].loc[ind_Mid]
-    df_train = drop_col_nan_inf(df_train)
-    y_M_id = np.array(df_original['y_train'])[ind_Mid]
-    
-    ind_Mid_test = np.where(df_original['X_test']["M_id"].isin(M_id))[0]
-    df_test_M_id = df_original['X_test'].loc[ind_Mid_test]
-    df_test_M_id = drop_col_nan_inf(df_test_M_id)
-    
-    y_M_id_test = np.array(df_original['y_test'])[ind_Mid_test]
+if run_removal == 1:
+    fs = FeatureSelector(data = df, labels = y)
 
-    fs = FeatureSelector(data = df_train, labels = y_M_id)
-    #%%
     fs.identify_single_unique()
     single_unique = fs.ops['single_unique']
     # fs.plot_unique()
     #%%
     fs.identify_collinear(correlation_threshold=0.98)
-    # fs.identify_collinear(correlation_threshold=0.9)
     correlated_features = fs.ops['collinear']
-    # print(correlated_features[:5])
     # fs.plot_collinear()
     #%%
-    fs.identify_zero_importance(task = 'regression', eval_metric = 'auc', n_iterations = 5, early_stopping = True)
+    fs.identify_zero_importance(task = 'regression', eval_metric = 'auc', n_iterations = 10, early_stopping = True)
     zero_importance_f = fs.ops['zero_importance']
     # fs.identify_low_importance(0.95)
     # low_importance_f = fs.ops['low_importance']
@@ -66,17 +52,35 @@ for counter,M_id in enumerate(M_ids):
     print('LGBM finished-------------------')
     #%%
     all_to_remove = fs.check_removal()
-    # print(all_to_remove)
+    print(all_to_remove)
     train_removed = fs.remove(methods = 'all')
     
-    df_test_M_id = df_test_M_id.drop(all_to_remove, axis=1)
+    save_object(all_to_remove, filename_features_remove)
+    
+else:
+    #%%
+    all_to_remove = loadDatasetObj(filename_features_remove)
+    
 
-    data_set = {'X_train':train_removed,'y_train':y_M_id,
-                'X_test':df_test_M_id,'y_test':y_M_id_test}
-    filename = os.path.join(sav_path,'X_Y_alibaba_M_id'+str(counter)+'.obj')
+all_to_remove = list(set(all_to_remove + feat_nan))
+#%%
+filename = os.path.join(data_path,'X_Y_alibaba_train_val_test_before_removing_features.obj')
 
+df_tvt = loadDatasetObj(filename)
+XY_train = df_tvt['XY_train'].drop(all_to_remove, axis=1)
+if len(df_tvt['XY_val'])!=0:
+    XY_val = df_tvt['XY_val'].drop(all_to_remove, axis=1)
+else:
+    XY_val=[]
+XY_test = df_tvt['XY_test'].drop(all_to_remove, axis=1)
 
-    save_object(data_set, filename)
+#%%
+data_set = {'XY_train':XY_train,
+            'XY_val':XY_val,
+            'XY_test':XY_test}
+filename = os.path.join(sav_path,'X_Y_alibaba_train_val_test_after_feature_removal.obj')
+save_object(data_set, filename)
+
 
 
 
