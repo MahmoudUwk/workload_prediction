@@ -38,7 +38,8 @@ def process_data_LSTM(group,cols,target,seq_length):
 
 
 def get_dataset_alibaba_lstm_no_cluster(seq_length,num_feat=6):
-    base_path = "data/"
+    base_path = 'C:/Users/mahmo/OneDrive/Desktop/kuljeet/Cloud project/Datasets/Alidbaba/'
+    # base_path = "data/"
     
     sav_path = base_path+"features_lstm"
     if not os.path.exists(sav_path):

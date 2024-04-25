@@ -137,13 +137,13 @@ def process_time(train_time_all):
             TT = sum(TT)
         if TT < 1 :
             TT = TT*60
-            TT = str(np.round(TT,2))+' s'
+            TT = str(np.round(TT,1))+' s'
         else:
             if TT < 60:
-                TT = str(np.round(TT,2))+' min'
+                TT = str(np.round(TT,1))+' min'
             else:
                 TT = TT / 60
-                TT = str(np.round(TT,2))+' hr'
+                TT = str(np.round(TT,1))+' hr'
         train_time_all2.append(TT)
     return train_time_all2
 
@@ -197,53 +197,53 @@ plt.savefig(os.path.join(sav_path,'PredictionsVsReal.eps'),bbox_inches='tight', 
 
 #%%conv graph
 
-# conv_data_path = 'data/LSTM_results/lstm_en_de_search_algCuckooSearch'
-# result_files = os.listdir(conv_data_path)
-# result_files = [file for file in result_files if file.endswith(".obj")]
-# algorithms_conv = ['CuckooSearch','Firefly']
+conv_data_path = os.path.join(working_path,'conv')
+result_files = os.listdir(conv_data_path)
+result_files = [file for file in result_files if file.endswith(".obj")]
+algorithms_conv = ['CuckooSearch','Firefly']
 
-# indeces = [algorithms[c2] for c1,alg in enumerate(algorithms) for c2,file in enumerate(result_files) if alg in file]
+indeces = [algorithms[c2] for c1,alg in enumerate(algorithms) for c2,file in enumerate(result_files) if alg in file]
 
-# # result_files = ['Best_paramMod_FireflyAlgorithm.obj','Best_paramFireflyAlgorithm.obj']
+# result_files = ['Best_paramMod_FireflyAlgorithm.obj','Best_paramFireflyAlgorithm.obj']
 
-# alg_rename_itr = {'Best_paramCuckooSearch':'Cuckoo Search',
-#               'Best_paramFireflyAlgorithm':'Fire Fly',
-#               'Best_paramMonkeyKingEvolutionV3':'MonkeyKingEvolutionV3'}
+alg_rename_itr = {'Best_paramCuckooSearch':'Cuckoo Search',
+              'Best_paramFireflyAlgorithm':'Fire Fly',
+              'Best_paramMonkeyKingEvolutionV3':'MonkeyKingEvolutionV3'}
 
-# full_file_path2 = [os.path.join(conv_data_path,file) for file in result_files]
+full_file_path2 = [os.path.join(conv_data_path,file) for file in result_files]
 
-# result_files = [file.split('.')[0] for file in result_files]
+result_files = [file.split('.')[0] for file in result_files]
 
-# fig = plt.figure(figsize=(9,8),dpi=120)
-# # markers = ['o-','o-']
-# data_hp = []
-# for counter,res_file in enumerate(full_file_path2):
-#     results_i = loadDatasetObj(res_file)
-#     data_hp.append(list(results_i['best_para_save'].values()))
-#     # max_val = max(max_val,max(max(results_i['y_test']),max(results_i['y_test_pred'])))
-#     plt.plot(results_i['a_itr'], np.sqrt(results_i['b_itr']),'o-',label=algorithms_conv[counter], linewidth=3.0)
+fig = plt.figure(figsize=(15,8),dpi=120)
+# markers = ['o-','o-']
+data_hp = []
+for counter,res_file in enumerate(full_file_path2):
+    results_i = loadDatasetObj(res_file)
+    data_hp.append(list(results_i['best_para_save'].values()))
+    # max_val = max(max_val,max(max(results_i['y_test']),max(results_i['y_test_pred'])))
+    plt.plot(results_i['a_itr'],100* np.sqrt(results_i['b_itr']),'o-',label=algorithms_conv[counter], linewidth=3.0)
 
-# plt.xlabel('Iteration', fontsize=13)
-# plt.ylabel('RMSE', fontsize=13)
-# # plt.xlim(0)
-# plt.legend()
-# # plt.ylim(0)
-# plt.show()
-# plt.title('Convergence Graph')
-# plt.gca().grid(True)
-# plt.savefig(os.path.join(sav_path,'Conv_eval_comparison.png'),bbox_inches='tight')
+plt.xlabel('Iteration', fontsize=fs+2)
+plt.ylabel('RMSE', fontsize=fs+2)
+# plt.xlim(0)
+plt.legend(prop={'size': fs+2})
+# plt.ylim(0)
+plt.show()
+plt.title('Convergence Graph', fontsize=fs+2)
+plt.gca().grid(True)
+plt.savefig(os.path.join(sav_path,'Conv_eval_comparison.eps'),bbox_inches='tight', format='eps')
 
 
 
 
 #%%
-# hp = list(results_i['best_para_save'].keys())
-# indeces_2 = [alg_rename_itr[f_i] for f_i in result_files]
-# df2 = pd.DataFrame(data=np.array(data_hp),columns=hp,index = indeces_2)
-# print(df2)
+hp = list(results_i['best_para_save'].keys())
+indeces_2 = [alg_rename_itr[f_i] for f_i in result_files]
+df2 = pd.DataFrame(data=np.array(data_hp),columns=hp,index = indeces_2)
+print(df2)
 
 
-# latex_txt_hp = df2.style.to_latex()
+latex_txt_hp = df2.style.to_latex()
 
-# write_txt(latex_txt_hp,os.path.join(sav_path,'LSTM_HP_latex.txt'))
+write_txt(latex_txt_hp,os.path.join(sav_path,'LSTM_HP_latex.txt'))
 #%%

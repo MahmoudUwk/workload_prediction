@@ -102,7 +102,7 @@ for m_id, group_val in  df_test_xy.groupby(["M_id"]):
     rmse_list.append(rmse_i_list)
 end_test = time.time()
 test_time = end_test - start_test
-obj = {'test_time':test_time,'train_time':train_time_all,'y_test':y_test_list,'y_test_pred':y_test_pred_list,'rmse_list':np.array(rmse_list),'Mids_test':Mids_test,'Best classifier':class_models_names[ind_best_classifier]}
+obj = {'acc_c':acc_c,'test_time':test_time,'train_time':train_time_all,'y_test':y_test_list,'y_test_pred':y_test_pred_list,'rmse_list':np.array(rmse_list),'Mids_test':Mids_test,'Best classifier':class_models_names[ind_best_classifier]}
 filename = os.path.join(save_pred_save,'base_proposed.obj')
 save_object(obj, filename)
 
