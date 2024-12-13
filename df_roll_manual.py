@@ -1,4 +1,4 @@
-
+#step 1
 import pandas as pd
 import numpy as np
 import pickle
@@ -8,9 +8,8 @@ from tsfresh import extract_features
 from Alibaba_helper_functions import loadDatasetObj,save_object
 pd.set_option('display.expand_frame_repr', False)
 pd.options.display.max_columns = None    
-
-
-base_path = "data/"
+from args import get_paths
+base_path,processed_path,feat_stats_step1,_,_ = get_paths()
 script = "server_usage.csv"
 target = " used percent of cpus(%)"
 
@@ -31,7 +30,7 @@ df = df.dropna()
 seq_length = 12
 
 
-sav_path = base_path+"feature_statistical"
+sav_path = feat_stats_step1
 if not os.path.exists(sav_path):
     os.makedirs(sav_path)
 #%%
@@ -65,14 +64,14 @@ for M_id, M_id_val in grouped:
     df_dataset_rolled = df_dataset_rolled.drop([' machine id'], axis=1)
     df_features = extract_features(df_dataset_rolled, column_id="id", column_sort=" timestamp",n_jobs = 1)#.dropna(axis=1, how='all')
 
-    df_features['M_id'] = [M_id]*len(df_features)
+    df_features['M_id'] = [M_id[0]]*len(df_features)
     # df_features = df_features.set_index('M_id')
     df_features['y'] = y
     dict_Mid = {"XY":df_features}
     assert(len(y)==len(df_features))
     del df_dataset_rolled
     del y
-    save_object(dict_Mid, os.path.join(sav_path,'X_Y_M_id_'+str(M_id)+'.obj'))
+    save_object(dict_Mid, os.path.join(sav_path,'X_Y_M_id_'+str(M_id[0])+'.obj'))
 
 
 

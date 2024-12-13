@@ -4,11 +4,13 @@ def reg_all(X_train,y_train,X_test,reg_model):
     from sklearn.gaussian_process.kernels import DotProduct, WhiteKernel,RBF
     from sklearn.gaussian_process import GaussianProcessRegressor
     from sklearn.ensemble import GradientBoostingRegressor,HistGradientBoostingRegressor
-    from sklearn.svm import SVR
+    from sklearn.svm import SVR,LinearSVR
     from sklearn.linear_model import LinearRegression
+    # LinearSVR(max_iter=100000) 
+    # SVR(kernel= 'linear', cache_size=4000, n_jobs=-1)
     reg_models_names = ["linear_reg","svr_reg","GPR_reg","GBT_reg"]
     ind = [c for c,ele in enumerate(reg_models_names) if ele==reg_model][0]
-    regs_all = [LinearRegression(), SVR(kernel= 'linear'),GaussianProcessRegressor(copy_X_train=False,kernel=DotProduct() + WhiteKernel()), 
+    regs_all = [LinearRegression(), LinearSVR(max_iter=100000) ,GaussianProcessRegressor(copy_X_train=False,kernel=DotProduct() + WhiteKernel()), 
                 HistGradientBoostingRegressor()]
     reg = regs_all[ind]
     reg.fit(X_train, y_train)

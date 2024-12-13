@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+#step 3
 """
 Created on Tue Feb 20 11:31:26 2024
 df roll
@@ -7,22 +8,24 @@ feature removal
 @author: msallam
 """
 import numpy as np
-from sklearn.preprocessing import MinMaxScaler
-from models_lib import reg_all,class_all
+# from sklearn.preprocessing import MinMaxScaler
+# from models_lib import reg_all,class_all
 from feature_selector import FeatureSelector
-import pickle
-from Alibaba_helper_functions import get_Mid
+# import pickle
+# from Alibaba_helper_functions import get_Mid
 import os
 from Alibaba_helper_functions import loadDatasetObj,save_object,drop_col_nan_inf
+from args import get_paths
 
-base_path = "data/"
-# base_path = "C:/Users/msallam/Desktop/Cloud project/Datasets/Alidbaba/"
-data_path = base_path+"feature_statistical_proccessed"
-sav_path = data_path
+#%%
+base_path,processed_path,feat_stats_step1,feat_stats_step2,feat_stats_step3 = get_paths()
+
+data_path = feat_stats_step2
+sav_path = feat_stats_step3
 if not os.path.exists(sav_path):
     os.makedirs(sav_path)
 filename_features_remove = os.path.join(sav_path,'all_to_remove.obj')
-run_removal = 0
+run_removal = 1
 
 filename = os.path.join(data_path,'X_Y_alibaba_all.obj')
 df_original = loadDatasetObj(filename)

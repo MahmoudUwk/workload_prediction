@@ -23,7 +23,7 @@ warnings.filterwarnings('ignore')
 np.random.seed(7)
 def log_results_LSTM(row,save_path):
 
-    save_name = 'results_LSTM_en_de_HP_seach_no_cluster5.csv'
+    save_name = 'results_LSTM_en_de_HP_seach.csv'
     cols = ["RMSE", "MAE", "MAPE(%)","seq","num_layers","units","best epoch","num_feat",'algorithm_name','batch_size','test_num','alg']
 
     df3 = pd.DataFrame(columns=cols)
@@ -111,139 +111,135 @@ class LSTMHyperparameterOptimization(Problem):
         return  model.evaluate(X_test,y_test)
 
 #%%
-base_path = "data/"
-sav_path_general = base_path+"LSTM_results/lstm_en_de_search_alg"
+from args import get_paths
+base_path,processed_path,_,_,feat_stats_step3,sav_path_general = get_paths()
 if not os.path.exists(sav_path_general):
     os.makedirs(sav_path_general)
-num_feat = 3
-num_feat_list = range(3,4)
+num_feat = 2
+num_feat_list = [2]
 batch_list = range(9,10)
 run_search= 0
 pop_size= 10
 num_epoc = 2500
 FF_itr = 15
-alg_range = [1]
+alg_range = [2]
 
-vb = 0
+vb = 1
 #%%
-for alg_all in alg_range:
+algorithm = CuckooSearch(population_size = pop_size) 
+
+alg_name = algorithm.Name[0]#+'_population_'+str(pop_size)+'_itr_'+str(FF_itr)
+save_path = os.path.join(sav_path_general,alg_name)
+if not os.path.exists(save_path):
+    os.makedirs(save_path)
+#%%
+if run_search: 
+    problem = LSTMHyperparameterOptimization(num_feat,num_epoc)
+    task = Task(problem, max_iters=FF_itr, optimization_type=OptimizationType.MINIMIZATION)
+
     
-    if alg_all == 0:
-        algorithm = Mod_FireflyAlgorithm.Mod_FireflyAlgorithm(population_size = pop_size)
-    elif alg_all == 1:
-        algorithm = FireflyAlgorithm(population_size = pop_size)
-    elif alg_all==2:
-        algorithm = CuckooSearch(population_size = pop_size) 
-    elif alg_all==3:
-        algorithm = MonkeyKingEvolutionV3(population_size = pop_size) 
-        
-    alg_name = algorithm.Name[0]#+'_population_'+str(pop_size)+'_itr_'+str(FF_itr)
-    save_path = sav_path_general+alg_name
-    if not os.path.exists(save_path):
-        os.makedirs(save_path)
+    best_params, best_mse = algorithm.run(task)
+    
+    best_para_save = get_hyperparameters(best_params)
+    
+
+    a_itr,b_itr = task.convergence_data()
+    a_eval,b_eval = task.convergence_data(x_axis='evals')
+    sav_dict_par = {'a_itr':a_itr,'b_itr':b_itr,'a_eval':a_eval,'b_eval':b_eval,'best_para_save':best_para_save}
+    save_object(sav_dict_par,os.path.join(save_path,'Best_param'+alg_name+'.obj'))
+    print('Best parameters:', best_para_save)
+    task.plot_convergence(x_axis='evals')
+    
+    # plt.savefig(os.path.join(save_path,'Conv_FF_eval'+str(datatype_opt)+alg_name+'.png'))
+    # plt.close()
+    
+    task.plot_convergence()
+    
+    plt.savefig(os.path.join(save_path,'Conv_FF_itr_n_feat'+str(num_feat)+alg_name+'.png'))
+    plt.close()
+
+
 #%%
-    if run_search: 
-        problem = LSTMHyperparameterOptimization(num_feat,num_epoc)
-        task = Task(problem, max_iters=FF_itr, optimization_type=OptimizationType.MINIMIZATION)
-
+for batch_pow in batch_list:
+    for num_feat in num_feat_list: 
+        batch_size = 2**batch_pow
+        best_params = loadDatasetObj(os.path.join(save_path,'Best_param'+alg_name+'.obj'))['best_para_save']
         
-        best_params, best_mse = algorithm.run(task)
-        
-        best_para_save = get_hyperparameters(best_params)
-        
-
-        a_itr,b_itr = task.convergence_data()
-        a_eval,b_eval = task.convergence_data(x_axis='evals')
-        sav_dict_par = {'a_itr':a_itr,'b_itr':b_itr,'a_eval':a_eval,'b_eval':b_eval,'best_para_save':best_para_save}
-        save_object(sav_dict_par,os.path.join(save_path,'Best_param'+alg_name+'.obj'))
-        print('Best parameters:', best_para_save)
-        task.plot_convergence(x_axis='evals')
-        
-        # plt.savefig(os.path.join(save_path,'Conv_FF_eval'+str(datatype_opt)+alg_name+'.png'))
-        # plt.close()
-        
-        task.plot_convergence()
-        
-        plt.savefig(os.path.join(save_path,'Conv_FF_itr_n_feat'+str(num_feat)+alg_name+'.png'))
-        plt.close()
+        X_train,y_train,X_val,y_val,X_test ,y_test,scaler,X_test_list,y_test_list,Mids_test = get_data(best_params,num_feat)
+        print(X_train.shape,X_val.shape,X_test.shape)
 
 
+        
+        y_train = expand_dims(expand_dims(y_train))
+        input_dim=(X_train.shape[1],X_train.shape[2])
+        output_dim = y_train.shape[-1]
+        
+        model = get_classifier(best_params,input_dim,output_dim)
+        
+        from keras.utils.vis_utils import plot_model
+        plot_model(model, to_file='model_plot.png', show_shapes=True, show_layer_names=True)
+        
+        
+        callbacks_list = [EarlyStopping(monitor='val_loss', patience=50, restore_best_weights=True)]
+        
+        start_train = time.time()
+        history = model.fit(X_train, y_train, epochs=num_epoc, batch_size=batch_size, verbose=vb, shuffle=True, validation_data=(X_val,y_val),callbacks=callbacks_list)
+        end_train = time.time()
+        train_time = (end_train - start_train)/60
+
+        # model.save(alg_name+'_n_feat_'+str(num_feat))
+        best_epoch = np.argmin(history.history['val_loss'])
+     
+        y_test = y_test*scaler  
+        
+        y_test_pred = (model.predict(X_test))*scaler
+
+        rmse = RMSE(y_test,y_test_pred)
+        mae = MAE(y_test,y_test_pred)
+        mape = MAPE(y_test,y_test_pred)
+        # print(rmse,mae,mape)
+        
+        
+        
     #%%
-    for batch_pow in batch_list:
-        for num_feat in num_feat_list: 
-            batch_size = 2**batch_pow
-            best_params = loadDatasetObj(os.path.join(save_path,'Best_param'+alg_name+'.obj'))['best_para_save']
-            
-            X_train,y_train,X_val,y_val,X_test ,y_test,scaler,X_test_list,y_test_list,Mids_test = get_data(best_params,num_feat)
-            print(X_train.shape,X_val.shape,X_test.shape)
+        row = [rmse,mae,mape,best_params['seq'],best_params['num_layers'],best_params['units'],best_epoch,num_feat,alg_name,batch_size,X_test.shape[0],alg_name]
+        name_sav = ""
+        for n in row:
+            name_sav = name_sav+str(n)+"_" 
 
-
-            
-            y_train = expand_dims(expand_dims(y_train))
-            input_dim=(X_train.shape[1],X_train.shape[2])
-            output_dim = y_train.shape[-1]
-            
-            model = get_classifier(best_params,input_dim,output_dim)
-            callbacks_list = [EarlyStopping(monitor='val_loss', patience=50, restore_best_weights=True)]
-            
-            start_train = time.time()
-            history = model.fit(X_train, y_train, epochs=num_epoc, batch_size=batch_size, verbose=vb, shuffle=True, validation_data=(X_val,y_val),callbacks=callbacks_list)
-            end_train = time.time()
-            train_time = (end_train - start_train)/60
-    
-            # model.save(alg_name+'_n_feat_'+str(num_feat))
-            best_epoch = np.argmin(history.history['val_loss'])
-         
-            y_test = y_test*scaler  
-            
-            y_test_pred = (model.predict(X_test))*scaler
-
-            rmse = RMSE(y_test,y_test_pred)
-            mae = MAE(y_test,y_test_pred)
-            mape = MAPE(y_test,y_test_pred)
-            # print(rmse,mae,mape)
-            
-            
-            
-        #%%
-            row = [rmse,mae,mape,best_params['seq'],best_params['num_layers'],best_params['units'],best_epoch,num_feat,alg_name,batch_size,X_test.shape[0],alg_name]
-            name_sav = ""
-            for n in row:
-                name_sav = name_sav+str(n)+"_" 
-    
-            flag = log_results_LSTM(row,sav_path_general)
-            save_path_dat = base_path+'/pred_results_all'
-            if not os.path.exists(save_path_dat):
-                os.makedirs(save_path_dat)
-            filename = os.path.join(save_path_dat,alg_name+'.obj')
-            if flag == 1:
-                y_test_pred_list = []
-                rmse_list = []
-                start_test = time.time()
-                for c,test_sample in enumerate(X_test_list):
-                    pred_i = (model.predict(test_sample))
-                    y_test_pred_list.append(pred_i*scaler)
-                    rmse_i_list = RMSE(y_test_list[c]*scaler,pred_i*scaler)
-                    y_test_list[c] = y_test_list[c]*scaler
-                    rmse_list.append(rmse_i_list)
-                end_test = time.time()
-                test_time = end_test - start_test
-                val_loss = history.history['val_loss']
-                train_loss = history.history['loss']
-                obj = {'test_time':test_time,'train_time':train_time,'y_test':y_test_list,'y_test_pred':y_test_pred_list,'scaler':scaler,'rmse_list':np.array(rmse_list),'best_params':best_params,'Mids_test':Mids_test,'val_loss':val_loss,'train_loss':train_loss}
-                save_object(obj, filename)
+        flag = log_results_LSTM(row,sav_path_general)
+        save_path_dat = base_path+'/pred_results_all'
+        if not os.path.exists(save_path_dat):
+            os.makedirs(save_path_dat)
+        filename = os.path.join(save_path_dat,alg_name+'.obj')
+        if flag == 1:
+            y_test_pred_list = []
+            rmse_list = []
+            start_test = time.time()
+            for c,test_sample in enumerate(X_test_list):
+                pred_i = (model.predict(test_sample))
+                y_test_pred_list.append(pred_i*scaler)
+                rmse_i_list = RMSE(y_test_list[c]*scaler,pred_i*scaler)
+                y_test_list[c] = y_test_list[c]*scaler
+                rmse_list.append(rmse_i_list)
+            end_test = time.time()
+            test_time = end_test - start_test
+            val_loss = history.history['val_loss']
+            train_loss = history.history['loss']
+            obj = {'test_time':test_time,'train_time':train_time,'y_test':y_test_list,'y_test_pred':y_test_pred_list,'scaler':scaler,'rmse_list':np.array(rmse_list),'best_params':best_params,'Mids_test':Mids_test,'val_loss':val_loss,'train_loss':train_loss}
+            save_object(obj, filename)
 
 
 
 #%%
-save_name = sav_path_general+'/results_LSTM_en_de_HP_seach_no_cluster5.csv'
+# save_name = sav_path_general+'/results_LSTM_en_de_HP_seach_no_cluster5.csv'
 
-df = pd.read_csv(save_name)
-print(df)
+# df = pd.read_csv(save_name)
+# print(df)
 
-df.groupby('alg').min()['RMSE']
+# df.groupby('alg').min()['RMSE']
 
-ind1 = df[df['alg']=='FireflyAlgorithm']['RMSE'].argmin()
-df[df['alg']=='FireflyAlgorithm'].iloc[ind1,:]
-# 3.32 base paper
+# ind1 = df[df['alg']=='FireflyAlgorithm']['RMSE'].argmin()
+# df[df['alg']=='FireflyAlgorithm'].iloc[ind1,:]
+# # 3.32 base paper
 

@@ -5,26 +5,25 @@ Created on Thu Feb 15 11:05:49 2024
 @author: mahmo
 """
 import numpy as np
-from sklearn.preprocessing import MinMaxScaler
-from models_lib import reg_all,class_all
+# from sklearn.preprocessing import MinMaxScaler
+from models_lib import class_all
 import time
-from Alibaba_helper_functions import loadDatasetObj,save_object,diff,RMSE,expand_dims,expand_dims_st,flatten,get_data_stat
+from Alibaba_helper_functions import loadDatasetObj,flatten,save_object,RMSE,expand_dims_st,get_data_stat
 import os
+from args import get_paths
+base_path,processed_path,_,_,feat_stats_step3,sav_path = get_paths()
 #%%
-
 class_models_names = ["KNN","GNB","RDF","GBT","MLP"]
 models = ["linear_reg","svr_reg","GBT_reg"]#,"GPR_reg"]
-data_path = 'data/feature_statistical_proccessed/X_Y_alibaba_train_val_test_after_feature_removal.obj'
-sav_path = 'data/models/base_proposed'
+
+data_path = os.path.join(feat_stats_step3,'X_Y_alibaba_train_val_test_after_feature_removal.obj')
+sav_path = os.path.join(base_path,'base_proposed')
 if not os.path.exists(sav_path):
     os.makedirs(sav_path)
 
 
-RMSE_opt_all = []
 test_set_len = []
 df = loadDatasetObj(data_path)
-
-
 
 X_train,y_train,X_test,y_test,scaler,df_test_xy = get_data_stat(data_path)
 #%%
@@ -68,46 +67,52 @@ ind_best_classifier = np.argmax(acc_c)
 print(acc_c)
 print('Best classifier:',class_models_names[ind_best_classifier])
 #%%
-
 # model_best = class_models_names[np.argmax(acc_c)]
 class_trained_best = class_trained_all[ind_best_classifier]
-y_pred = y_pred_all[ind_best_classifier]
-y_pred_opt = np.zeros((len(X_test)))
+y_pred_regressor = y_pred_all[ind_best_classifier]
+y_reg_adaptive = np.zeros((len(X_test)))
 RMSE_opt_all = []
 for c_i , test_instance in enumerate(X_test):
-    y_pred_opt[c_i] = reg_trained_all[y_pred[c_i]].predict(expand_dims_st(test_instance))[0]
+    y_reg_adaptive[c_i] = reg_trained_all[y_pred_regressor[c_i]].predict(expand_dims_st(test_instance))[0]
 
-RMSE_opt_all.append(RMSE(y_pred_opt,y_test))
+RMSE_opt_all = RMSE(y_reg_adaptive,y_test)
     
 
 print(RMSE_opt_all)
 
 #%%.
-save_pred_save = 'data/pred_results_all'
+save_pred_save = os.path.join(base_path,'base_proposed2')
+if not os.path.exists(save_pred_save):
+    os.makedirs(save_pred_save)
 Mids_test = []
 y_test_list = []
 y_test_pred_list = []
 rmse_list = []
 start_test = time.time()
 for m_id, group_val in  df_test_xy.groupby(["M_id"]):
-    Mids_test.append(m_id)
+    Mids_test.append(m_id[0])
     y_test_list.append(np.array(group_val['y']))
     X_test_Mid = scaler.transform(np.array(group_val.drop(['y','M_id'],axis=1)))
     y_pred_reg_best = []
-    for c_i , test_instance in enumerate(X_test_Mid):
-        ind_reg = np.argmax(class_trained_best.predict(expand_dims_st(test_instance)))
-        y_pred_reg_best.append(reg_trained_all[ind_reg].predict(expand_dims_st(test_instance))[0])
+    ind_regs = class_trained_best.predict(X_test_Mid)
+    for counter,test_instance in enumerate(X_test_Mid):
+        ind_reg = ind_regs[counter]
+        # ind_reg = np.argmax(class_trained_best.predict(expand_dims_st(test_instance)))
+        y_i = reg_trained_all[ind_reg].predict(expand_dims_st(test_instance))[0]
+        y_pred_reg_best.append(y_i)
     y_test_pred_list.append(y_pred_reg_best)
     rmse_i_list = RMSE(np.array(group_val['y']),y_pred_reg_best)
     rmse_list.append(rmse_i_list)
 end_test = time.time()
 test_time = end_test - start_test
 obj = {'acc_c':acc_c,'test_time':test_time,'train_time':train_time_all,'y_test':y_test_list,'y_test_pred':y_test_pred_list,'rmse_list':np.array(rmse_list),'Mids_test':Mids_test,'Best classifier':class_models_names[ind_best_classifier]}
-filename = os.path.join(save_pred_save,'base_proposed.obj')
+filename = os.path.join(save_pred_save,'Adaptive_predictor.obj')
 save_object(obj, filename)
 
-print('RMSE:',np.mean(rmse_list))
 
+print(RMSE_opt_all)
+print('RMSE:',np.mean(rmse_list))
+print("RMSE:",RMSE(flatten(y_test_list),flatten(y_test_pred_list)))
 
 
 

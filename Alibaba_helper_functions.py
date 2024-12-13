@@ -75,7 +75,7 @@ def get_train_test_Mids(base_path,train_val_per,val_per):
     indeces_rearrange_random = np.random.permutation(len(M_ids))
     M_ids = M_ids[indeces_rearrange_random]
     
-    train_val_per = 0.8
+    # train_val_per = 0.8
     train_per = train_val_per - val_per
     
     train_len  = int(train_per * len(M_ids))
@@ -145,9 +145,8 @@ def save_object(obj, filename):
 def get_Mid():
     script = "server_usage.csv"
     target = " used percent of cpus(%)"
-    
-    base_path = "C:/Users/mahmo/OneDrive/Desktop/kuljeet/Cloud project/Datasets/Alidbaba/"
-    # base_path = "C:/Users/msallam/Desktop/Cloud project/Datasets/Alidbaba/"
+    from args import get_paths
+    base_path,processed_path,_,_,feat_stats_step3,sav_path = get_paths()
     info_path = base_path+"schema.csv"
     
     df_info =  pd.read_csv(info_path)

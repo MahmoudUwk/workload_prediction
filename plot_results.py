@@ -50,7 +50,7 @@ indeces = [algorithms[c2] for c1,file in enumerate(result_files) for c2,alg in e
 # indeces_short = [alg_rename_short[f_i] for f_i in result_files]
 indeces = [alg_rename[f_i] for f_i in indeces]
 indeces_short =indeces
-colors = ['r','g','c','y','k','b','m','brown','purple']
+colors = ['#047495','#632de9','#a4be5c','#acfffc','#ac9362','#3c4d03']
 
 fs = 17
 #%%
@@ -62,9 +62,9 @@ axs = axs.ravel()
 
 for i,res_file in enumerate(full_file_path):
     results_i = loadDatasetObj(res_file)
-    if 'CuckooSearch' in res_file:
-        ind_machine_id_cockoo = np.argmin(results_i['rmse_list'])
-        M_id_plot = results_i['Mids_test'][ind_machine_id_cockoo]
+    # if 'CuckooSearch' in res_file:
+    #     ind_machine_id_cockoo = np.argmin(results_i['rmse_list'])
+    #     M_id_plot = results_i['Mids_test'][ind_machine_id_cockoo]
     a1 = flatten(results_i['y_test'])
     a2 = flatten(results_i['y_test_pred'])
     axs[i].scatter(a1,a2 ,alpha=0.3,s=15, color = colors[i],marker='o', linewidth=1.5)
@@ -83,6 +83,14 @@ fig.suptitle('Scatter plot of predictions vs real values for different algorithm
 
 plt.savefig(os.path.join(sav_path,'scatter_plot.png'),bbox_inches='tight')
 
+#%%
+mean_test = np.argsort([np.mean(m_y) for m_y in results_i['y_test']])
+var_test = np.argsort([np.var(m_y) for m_y in results_i['y_test']])
+high_load_ind = mean_test[-1]
+low_load_ind = mean_test[1]
+high_var_ind = var_test[-1]
+low_var_ind = var_test[0]
+ind_plotMs = [high_load_ind,low_load_ind,high_var_ind,low_var_ind]
 #%% bar plot RMSE
 # patterns = [ "||" ,  "/",  "x","-","+",'//']
 barWidth = 0.3
@@ -105,7 +113,7 @@ for counter,res_file in enumerate(full_file_path):
     data_res.append([RMSE_i,MAE_i,MAPE_i])
 
 
-    plt.bar(counter , RMSE_i , color=colors[counter], width=barWidth, edgecolor='white', label = indeces[counter])
+    plt.bar(counter , RMSE_i , color=colors[counter], width=barWidth, hatch="x", edgecolor='black', label = indeces[counter])
 
 # Add xticks on the middle of the group bars
 plt.xlabel('Algorithm', fontsize=fs)
@@ -196,6 +204,7 @@ plt.savefig(os.path.join(sav_path,'PredictionsVsReal.eps'),bbox_inches='tight', 
 
 
 #%%conv graph
+# 
 
 conv_data_path = os.path.join(working_path,'conv')
 result_files = os.listdir(conv_data_path)

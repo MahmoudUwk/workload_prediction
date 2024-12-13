@@ -38,7 +38,9 @@ def process_data_LSTM(group,cols,target,seq_length):
 
 
 def get_dataset_alibaba_lstm_no_cluster(seq_length,num_feat=6):
-    base_path = 'C:/Users/mahmo/OneDrive/Desktop/kuljeet/Cloud project/Datasets/Alidbaba/'
+    from args import get_paths
+    base_path,processed_path,_,_,feat_stats_step3,sav_path = get_paths()
+    # base_path = 'C:/Users/mahmo/OneDrive/Desktop/kuljeet/Cloud project/Datasets/Alidbaba/'
     # base_path = "data/"
     
     sav_path = base_path+"features_lstm"
@@ -49,7 +51,8 @@ def get_dataset_alibaba_lstm_no_cluster(seq_length,num_feat=6):
     script = "server_usage.csv"
     target = " used percent of cpus(%)"
     cols = [' used percent of cpus(%)',
-            ' used percent of memory(%)', ' used percent of disk space(%)',
+            ' used percent of memory(%)', 
+            ' used percent of disk space(%)',
             ' linux cpu load average of 1 minute',
             ' linux cpu load average of 5 minute',
             ' linux cpu load average of 15 minute'][:num_feat]
@@ -85,9 +88,9 @@ def get_dataset_alibaba_lstm_no_cluster(seq_length,num_feat=6):
     
     #%%
 
-    sav_path2 = base_path+"features_lstm/"+"LSTM_M_id_features"
-    if not os.path.exists(sav_path2):
-        os.makedirs(sav_path2)
+    # sav_path2 = base_path+"features_lstm/"+"LSTM_M_id_features"
+    # if not os.path.exists(sav_path2):
+    #     os.makedirs(sav_path2)
         
     X_train_all,y_train_all,_ = process_data_LSTM(df_train.groupby([" machine id"]),cols,target,seq_length)
     

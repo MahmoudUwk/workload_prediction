@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+#step 2
 """
 Created on Fri Feb 16 15:23:37 2024
 
@@ -38,16 +39,18 @@ def agument_data(data_path,arr):
 
 
 #%%
-base_path = "data/"
-data_path = base_path+"feature_statistical"
-sav_path = base_path+"feature_statistical_proccessed"
+from args import get_paths
+base_path,processed_path,feat_stats_step1,feat_stats_step2,_ = get_paths()
+
+data_path = feat_stats_step1
+sav_path = feat_stats_step2
 if not os.path.exists(sav_path):
     os.makedirs(sav_path)
 arr = np.array(os.listdir(data_path))
 
 train_val_per = 0.8
 val_per = 0
-
+#
 M_ids_train, M_ids_val, M_ids_test = get_train_test_Mids(base_path,train_val_per,val_per)
 
 arr_train = ['X_Y_M_id_'+str(M_id)+'.obj' for M_id in M_ids_train]
