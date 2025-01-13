@@ -1,5 +1,7 @@
-
 import os
+import sys
+parent_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(parent_path)
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
@@ -13,8 +15,8 @@ def write_txt(txt,fname):
     f.write(txt)
     f.close()
 
-from args import get_paths
-base_path,processed_path,feat_stats_step1,feat_stats_step2,feat_stats_step3,working_path,sav_path = get_paths()
+from args_google import get_paths
+base_path,_,_,_,_,working_path,sav_path = get_paths()
 # sav_path =  os.path.join(working_path,'plots')
 
 if not os.path.exists(sav_path):
@@ -23,7 +25,7 @@ if not os.path.exists(sav_path):
 result_files = os.listdir(working_path)
 
 
-algorithms = ['CuckooSearch','Adaptive_predictor','HistGradientBoostingRegressor','SVR','LinearRegression']
+algorithms = ['CDEL_google_inference','Adaptive_predictor','HistGradientBoostingRegressor','SVR','LinearRegression']
 
 result_files = [file for file in result_files if file.endswith(".obj")]
 
@@ -31,7 +33,7 @@ result_files = [file for c1,alg in enumerate(algorithms) for c2,file in enumerat
 
 
 
-alg_rename = {'CuckooSearch':'CEDL (Proposed)',
+alg_rename = {'CDEL_google_inference':'CEDL (Proposed)',
               'LinearRegression':'LR',
               'Adaptive_predictor':'Adaptive selector',
               'HistGradientBoostingRegressor':'GBT',
@@ -95,10 +97,10 @@ test_time_all = []
 for counter,res_file in enumerate(full_file_path):
     results_i = loadDatasetObj(res_file)
     a1 = flatten(results_i['y_test'])
-    a2 = flatten(results_i['y_test_pred'])
-    train_time_all.append(results_i['train_time'])
-    test_time_all.append(results_i['test_time'])
-    
+    a2 = np.clip(flatten(results_i['y_test_pred']),0,100)
+    # train_time_all.append(results_i['train_time'])
+    # test_time_all.append(results_i['test_time'])
+    print(np.max(a1),np.min(a1),np.max(a2),np.min(a2))
     RMSE_i = RMSE(a1,a2)
     MAE_i = MAE(a1,a2)
     MAPE_i = MAPE(a1,a2)
@@ -131,7 +133,7 @@ plt.show()
 plt.savefig(os.path.join(sav_path,'bar_plot.eps'),bbox_inches='tight', format='eps')
 
 #%% train and test times
-Metric = ['RMSE','MAE',"MAPE","R2_score",'Train time (min)','Test time (s)']
+Metric = ['RMSE','MAE',"MAPE","R2_score"]
 data_res = np.array(data_res)
 
 def process_time(train_time_all):
@@ -152,9 +154,9 @@ def process_time(train_time_all):
     return train_time_all2
 
 data_res = np.round(np.array(data_res),2)
-TT = np.array([process_time(train_time_all),process_time(test_time_all)]).T
-dat = np.concatenate((data_res, TT),axis=1)
-df = pd.DataFrame(data=dat,columns=Metric,index = indeces)
+# TT = np.array([process_time(train_time_all),process_time(test_time_all)]).T
+# dat = np.concatenate((data_res, TT),axis=1)
+df = pd.DataFrame(data=data_res,columns=Metric,index = indeces)
 print(df)
 latex_txt = df.style.to_latex()
 
@@ -175,7 +177,7 @@ def get_ind_plot(y,i):
 def append_arr(y_true,y_pred):
     return np.concatenate([y_true[:(len(y_true)-len(y_pred))],y_pred],axis=0)
 
-
+length_plot = 150
 titles_plot = ['High Load','Low Load', 'High Variation', 'Low Variation']
 fig, axs = plt.subplots(len(titles_plot),1, figsize=(20,11),dpi=150, facecolor='w', edgecolor='k')
 fig.subplots_adjust(hspace = .3, wspace=.001)
@@ -189,7 +191,7 @@ for i,title_i in enumerate(titles_plot):
         ind_machine_id = get_ind_plot(y_cp,i)
         print(indeces[j],ind_machine_id)
         y_pred_plot = append_arr(y_cp[ind_machine_id],
-                                 np.squeeze(results_i['y_test_pred'][ind_machine_id]))
+                                 np.squeeze(results_i['y_test_pred'][ind_machine_id]))[:length_plot]
         y_pred_plot = np.clip(y_pred_plot,0,100)
         if i == 3:
             axs[i].plot(y_pred_plot, markers[j]+'-', 
@@ -198,12 +200,12 @@ for i,title_i in enumerate(titles_plot):
             axs[i].plot(y_pred_plot, markers[j]+'-', 
                         color = colors[j],alpha=0.6, linewidth=0.8)
     if i == 3:
-        axs[i].plot(np.squeeze(y_cp[ind_machine_id]), 'o-', 
+        axs[i].plot(np.squeeze(y_cp[ind_machine_id][:length_plot]), 'o-', 
         color = 'blue',markersize=5, linewidth=0.8, alpha = alpha_blue,label='true')
     else:
-        axs[i].plot(np.squeeze(y_cp[ind_machine_id]), 'o-', 
+        axs[i].plot(np.squeeze(y_cp[ind_machine_id][:length_plot]), 'o-', 
             color = 'blue',markersize=5, linewidth=0.8, alpha = alpha_blue)
-    len_i = len(np.squeeze(y_cp[ind_machine_id]))
+    len_i = len(np.squeeze(y_cp[ind_machine_id])[:length_plot])
     axs[i].set_title(titles_plot[i], fontsize=fs-2, x=0.6, y=0.45)
     axs[i].set_xticks(np.arange(0,len_i,10) , 5*np.arange(0,len_i,10) )
 
@@ -215,7 +217,7 @@ for i,title_i in enumerate(titles_plot):
 
 axs[i].set_xlabel('Timestamp (min)' ,fontsize=fs)
 
-fig.legend(prop={'size': fs-1},loc=(0.16,0.4))
+fig.legend(prop={'size': fs-1},loc=(0.75,0.61))
 
 M_id = np.array(results_i['Mids_test'])[ind_machine_id]
 # fig.suptitle('Prediction vs true values for machine number '+str(M_id), fontsize=fs, x=0.5, y=0.92)
@@ -223,58 +225,3 @@ M_id = np.array(results_i['Mids_test'])[ind_machine_id]
 plt.savefig(os.path.join(sav_path,'PredictionsVsReal.eps'),bbox_inches='tight', format='eps')
 
 
-#%%conv graph
-# 
-
-conv_data_path = os.path.join(working_path,'CuckooSearch')
-result_files = os.listdir(conv_data_path)
-result_files = [file for file in result_files if file.endswith(".obj")]
-algorithms_conv = ['Cuckoo Search Iterations']
-
-# indeces = [algorithms[c2] for c1,alg in enumerate(algorithms) for c2,file in enumerate(result_files) if alg in file]
-
-# result_files = ['Best_paramMod_FireflyAlgorithm.obj','Best_paramFireflyAlgorithm.obj']
-
-alg_rename_itr = {'Best_paramCuckooSearch':'Cuckoo Search',
-              'Best_paramFireflyAlgorithm':'Fire Fly',
-              'Best_paramMonkeyKingEvolutionV3':'MonkeyKingEvolutionV3'}
-
-full_file_path2 = [os.path.join(conv_data_path,file) for file in result_files]
-
-result_files = [file.split('.')[0] for file in result_files]
-
-fig = plt.figure(figsize=(15,8),dpi=120)
-# markers = ['o-','o-']
-data_hp = []
-for counter,res_file in enumerate(full_file_path2):
-    results_j = loadDatasetObj(res_file)
-    data_hp.append(list(results_j['best_para_save'].values()))
-    # max_val = max(max_val,max(max(results_j['y_test']),max(results_j['y_test_pred'])))
-    plt.plot(results_j['a_itr'],100* np.sqrt(results_j['b_itr']),'o-',color=colors[0],label=algorithms_conv[counter], linewidth=3.0)
-
-plt.xlabel('Iteration', fontsize=fs+2)
-plt.ylabel('RMSE', fontsize=fs+2)
-plt.xticks(fontsize=fs+2)
-plt.yticks(fontsize=fs+2)
-# plt.xlim(0)
-plt.legend(prop={'size': fs+6})
-# plt.ylim(0)
-plt.show()
-# plt.title('Convergence Graph', fontsize=fs+2)
-plt.grid()
-plt.gca().grid(True)
-plt.savefig(os.path.join(sav_path,'Conv_eval_comparison.eps'),bbox_inches='tight', format='eps')
-
-
-
-
-#%%
-hp = list(results_j['best_para_save'].keys())
-indeces_2 = [alg_rename_itr[f_i] for f_i in result_files]
-df2 = pd.DataFrame(data=np.array(data_hp),columns=hp,index = indeces_2)
-print(df2)
-
-
-latex_txt_hp = df2.style.to_latex()
-
-write_txt(latex_txt_hp,os.path.join(sav_path,'LSTM_HP_latex.txt'))

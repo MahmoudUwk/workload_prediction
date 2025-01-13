@@ -112,9 +112,10 @@ class LSTMHyperparameterOptimization(Problem):
 
 #%%
 from args import get_paths
-base_path,processed_path,_,_,feat_stats_step3,sav_path_general = get_paths()
-if not os.path.exists(sav_path_general):
-    os.makedirs(sav_path_general)
+base_path,processed_path,feat_stats_step1,feat_stats_step2,feat_stats_step3,sav_path,sav_path_plots = get_paths()
+
+if not os.path.exists(sav_path):
+    os.makedirs(sav_path)
 num_feat = 2
 num_feat_list = [2]
 batch_list = range(9,10)
@@ -129,7 +130,7 @@ vb = 1
 algorithm = CuckooSearch(population_size = pop_size) 
 
 alg_name = algorithm.Name[0]#+'_population_'+str(pop_size)+'_itr_'+str(FF_itr)
-save_path = os.path.join(sav_path_general,alg_name)
+save_path = os.path.join(sav_path,alg_name)
 if not os.path.exists(save_path):
     os.makedirs(save_path)
 #%%
@@ -207,12 +208,13 @@ for batch_pow in batch_list:
         for n in row:
             name_sav = name_sav+str(n)+"_" 
 
-        flag = log_results_LSTM(row,sav_path_general)
+        flag = log_results_LSTM(row,sav_path)
         save_path_dat = base_path+'/pred_results_all'
         if not os.path.exists(save_path_dat):
             os.makedirs(save_path_dat)
         filename = os.path.join(save_path_dat,alg_name+'.obj')
         if flag == 1:
+            model.save(os.path.join(save_path_dat,"CEDL"))  # Creates a directory named "my_model"
             y_test_pred_list = []
             rmse_list = []
             start_test = time.time()

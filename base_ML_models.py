@@ -1,29 +1,14 @@
-
 import numpy as np
-
-from sklearn.gaussian_process.kernels import DotProduct, WhiteKernel,RBF
-from sklearn.gaussian_process import GaussianProcessRegressor
-# from sklearn.ensemble import GradientBoostingRegressor,HistGradientBoostingRegressor
-from sklearn.svm import SVR
-# from sklearn.experimental import enable_hist_gradient_boosting
 from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.linear_model import LinearRegression
 from Alibaba_helper_functions import RMSE,save_object,flatten,get_data_stat
 import os
-# from gpflow.mean_functions import Constant
-# from gpflow.utilities import positive, print_summary
-
-# from sklearn.gaussian_process.kernels import DotProduct, WhiteKernel,RBF
-# from sklearn.gaussian_process import GaussianProcessRegressor
-# from sklearn.ensemble import GradientBoostingRegressor,HistGradientBoostingRegressor
-from sklearn.svm import SVR,LinearSVR
-from sklearn.linear_model import LinearRegression
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.svm import LinearSVR
 # import gpflow
 import time
 # %%
 from args import get_paths
-base_path,processed_path,_,_,feat_stats_step3,sav_path = get_paths()
+base_path,processed_path,feat_stats_step1,feat_stats_step2,feat_stats_step3,sav_path,sav_path_plots = get_paths()
 data_path = feat_stats_step3
 # sav_path = os.path.join(base_path, '/regular_regressors')
 if not os.path.exists(sav_path):

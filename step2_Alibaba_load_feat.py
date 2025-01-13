@@ -40,7 +40,7 @@ def agument_data(data_path,arr):
 
 #%%
 from args import get_paths
-base_path,processed_path,feat_stats_step1,feat_stats_step2,_ = get_paths()
+base_path,processed_path,feat_stats_step1,feat_stats_step2,feat_stats_step3,sav_path,sav_path_plots = get_paths()
 
 data_path = feat_stats_step1
 sav_path = feat_stats_step2

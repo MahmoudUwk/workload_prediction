@@ -11,7 +11,8 @@ import time
 from Alibaba_helper_functions import loadDatasetObj,flatten,save_object,RMSE,expand_dims_st,get_data_stat
 import os
 from args import get_paths
-base_path,processed_path,_,_,feat_stats_step3,sav_path = get_paths()
+base_path,processed_path,feat_stats_step1,feat_stats_step2,feat_stats_step3,sav_path,sav_path_plots = get_paths()
+
 #%%
 class_models_names = ["KNN","GNB","RDF","GBT","MLP"]
 models = ["linear_reg","svr_reg","GBT_reg"]#,"GPR_reg"]
@@ -79,6 +80,8 @@ RMSE_opt_all = RMSE(y_reg_adaptive,y_test)
     
 
 print(RMSE_opt_all)
+BC = os.path.join(sav_path,'best_classifier.obj')
+save_object(class_trained_best, BC)
 
 #%%.
 save_pred_save = os.path.join(base_path,'base_proposed2')
