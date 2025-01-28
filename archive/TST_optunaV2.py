@@ -286,11 +286,11 @@ def evaluate_best_model(study,sav_path,batch_size):
     
     end_test = time.time()
     train_time = end_test - start_test
-
-    y_test_pred_list = []
-    rmse_list = []
     start_test = time.time()
     scaler = 100
+    y_test_pred_list = []
+    rmse_list = []
+
     for c,test_sample in enumerate(X_test_list):
         test_sample = np.expand_dims(np.squeeze(test_sample), axis=1)
         pred_i, *_ = best_model.get_X_preds(test_sample)

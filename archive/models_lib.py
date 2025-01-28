@@ -1,5 +1,3 @@
-import numpy as np
-
 def reg_all(X_train,y_train,X_test,reg_model):
     from sklearn.gaussian_process.kernels import DotProduct, WhiteKernel,RBF
     from sklearn.gaussian_process import GaussianProcessRegressor
@@ -101,19 +99,4 @@ def MLP_classifier(X_train,y_train,X_test):
     
     y_test_pred = np.argmax(model.predict(X_test),axis=1)
     return model,y_test_pred
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

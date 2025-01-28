@@ -83,10 +83,7 @@ print(RMSE_opt_all)
 BC = os.path.join(sav_path,'best_classifier.obj')
 save_object(class_trained_best, BC)
 
-#%%.
-save_pred_save = os.path.join(base_path,'base_proposed2')
-if not os.path.exists(save_pred_save):
-    os.makedirs(save_pred_save)
+#%%
 Mids_test = []
 y_test_list = []
 y_test_pred_list = []
@@ -100,7 +97,6 @@ for m_id, group_val in  df_test_xy.groupby(["M_id"]):
     ind_regs = class_trained_best.predict(X_test_Mid)
     for counter,test_instance in enumerate(X_test_Mid):
         ind_reg = ind_regs[counter]
-        # ind_reg = np.argmax(class_trained_best.predict(expand_dims_st(test_instance)))
         y_i = reg_trained_all[ind_reg].predict(expand_dims_st(test_instance))[0]
         y_pred_reg_best.append(y_i)
     y_test_pred_list.append(y_pred_reg_best)
@@ -109,10 +105,8 @@ for m_id, group_val in  df_test_xy.groupby(["M_id"]):
 end_test = time.time()
 test_time = end_test - start_test
 obj = {'acc_c':acc_c,'test_time':test_time,'train_time':train_time_all,'y_test':y_test_list,'y_test_pred':y_test_pred_list,'rmse_list':np.array(rmse_list),'Mids_test':Mids_test,'Best classifier':class_models_names[ind_best_classifier]}
-filename = os.path.join(save_pred_save,'Adaptive_predictor.obj')
+filename = os.path.join(sav_path,'Adaptive_predictor.obj')
 save_object(obj, filename)
-
-
 print(RMSE_opt_all)
 print('RMSE:',np.mean(rmse_list))
 print("RMSE:",RMSE(flatten(y_test_list),flatten(y_test_pred_list)))

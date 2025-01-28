@@ -13,7 +13,7 @@ import os
 from args import get_paths
 base_path,processed_path,_,_,feat_stats_step3,sav_path = get_paths()
 #%%
-models = ["linear_reg","svr_reg","GBT_reg"]#,"GPR_reg"]
+models = ["linear_reg","svr_reg","GBT_reg"]
 data_path = os.path.join(feat_stats_step3,'X_Y_alibaba_train_val_test_after_feature_removal.obj')
 sav_path = os.path.join(base_path,'base_proposed')
 if not os.path.exists(sav_path):

@@ -1,6 +1,6 @@
 def get_paths():
     base_path = "C:/Users/mahmo/OneDrive/Desktop/kuljeet/Cloud project/Datasets/BB/rnd"
-    # base_path = "/home/student/CPU_project/"
+    # base_path = "Datasets/"
     processed_path = base_path+"Proccessed_BB"
     feat_BB_step1 = base_path+"feat_BB_step1"
     feat_BB_step2 = base_path+"feat_BB_step2_divide"
