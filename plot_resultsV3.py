@@ -19,18 +19,12 @@ data_sets = ['Alibaba','BB']
 dataset_names_label = ['Alibaba','Bitbrains']
 
 
-if data_sets[dataset_plot] == 'google':
-    from args_google import get_paths
-    _,_,_,_,_,working_path,sav_path = get_paths()
-    CEDL_name = 'google'
-    x_legend,y_legend = 0.65,0.65
-    x_title,y_title = 0.6,0.8
-elif data_sets[dataset_plot] == 'BB':
+if data_sets[dataset_plot] == 'BB':
     from args_BB import get_paths
     _,_,_,_,_,working_path,sav_path = get_paths()
     CEDL_name = 'BB'
     x_legend,y_legend = 0.75,0.65
-    x_title,y_title = 0.69,0.8
+    x_title,y_title = 0.11,0.74
     table_label = 'table:results_BB'
     ipTS = [-1, 0, -2 ,0]
     spInd = 1000
@@ -52,7 +46,7 @@ result_files = os.listdir(working_path)
 
 
 
-algorithms = [CEDL_name+'TST_LSTM',CEDL_name+'EnDeAtt',CEDL_name+'LSTM',data_sets[dataset_plot]+'_effecientB0','PatchTST',CEDL_name+'CNN','Adaptive_predictor','HistGradientBoostingRegressor','SVR','LinearRegression']
+algorithms = [CEDL_name+'TST_LSTM',CEDL_name+'EnDeAtt',CEDL_name+'LSTM','PatchTST',CEDL_name+'CNN','Adaptive_predictor','HistGradientBoostingRegressor','SVR','LinearRegression']
 
 result_files = [file for file in result_files if file.endswith(".obj")]
 
@@ -63,7 +57,6 @@ result_files = [file for c1,alg in enumerate(algorithms) for c2,file in enumerat
 alg_rename = {CEDL_name+'TST_LSTM':'TempoSight',
               CEDL_name+'EnDeAtt':'CEDL',
               CEDL_name+'LSTM':'LSTM',
-              data_sets[dataset_plot]+'_effecientB0':'TS-EffiNet',
               'PatchTST':'Patch\nTST',
               CEDL_name+'CNN':'CNN',
               'Adaptive_predictor':'Adaptive',
@@ -107,8 +100,8 @@ for counter,res_file in enumerate(full_file_path):
         scal1 = 100
     # print(scal1)
 
-    a1 = scal1*np.squeeze(np.clip(flatten(results_i['y_test']),0,100))
-    a2 = np.squeeze(np.clip(flatten(results_i['y_test_pred']),0,100))
+    a1 = np.squeeze(scal1*flatten(results_i['y_test']))
+    a2 = np.squeeze(flatten(results_i['y_test_pred']))
     train_time_all.append(results_i['train_time'])
     test_time_all.append(results_i['test_time'])
     
@@ -139,7 +132,7 @@ plt.show()
 
 plt.savefig(os.path.join(sav_path,'bar_plot.eps'),bbox_inches='tight', format='eps')
 
-#%% train and test times
+# train and test times
 # if  data_sets[dataset_plot] == 'Alibaba':
 #     Metric = ['RMSE','MAE',"MAPE","$R^2$",'Train time','Test time']
 # else:    
@@ -179,8 +172,7 @@ df_res = pd.DataFrame(data=data_res, columns = Metric[:-2], index = indeces).rou
 # 2. Concatenate the DataFrames
 df = pd.concat([df_res, df_tt], axis=1).round(2)
 
-    
-
+#%%
 min_cols = Metric[:3]
 s = df.style.highlight_min(subset=min_cols,axis=0, 
     props='cellcolor:[HTML]{E0E0E0}; color:{blue}; itshape:; bfseries:;'
@@ -200,7 +192,7 @@ latex_txt = s.to_latex(
     multirow_align="t", multicol_align="r"
 
 )  
-print(latex_txt)
+print(data_res)
 write_txt(latex_txt,os.path.join(sav_path,dataset_names_label[dataset_plot]+'results_table_latex.tex'))
 #%% boxplot
 # title="Box plot of absolute error computed for CPU utilization estimation using baseline and proposed methods for Bitbrain data set."
@@ -280,7 +272,7 @@ for i,title_i in enumerate(titles_plot):
     scal1 = 1
     if np.max(y_cp_i)<2:
         y_cp_i = 100*y_cp_i
-    for j,res_file in enumerate(full_file_path[:5]):
+    for j,res_file in enumerate(full_file_path[:4]):
 
         results_i = loadDatasetObj(res_file)
         M_id_test_i = results_i['Mids_test']
@@ -358,10 +350,10 @@ if data_sets[dataset_plot] == 'Alibaba':
         max_val_i = max(np.max(a1),np.max(a2))
         X_line = np.arange(0,max_val_i,max_val_i/200)
         axs[i].plot(X_line,X_line)
-        axs[i].tick_params(axis='x', labelsize=fs)
-        axs[i].tick_params(axis='y', labelsize=fs)
+        axs[i].tick_params(axis='x', labelsize=fs+1)
+        axs[i].tick_params(axis='y', labelsize=fs+1)
         plt.grid()
-        axs[i].set_xlabel('Real CPU Utilization(%)', fontsize=fs-1)
+        axs[i].set_xlabel('Real CPU Utilization(%)', fontsize=fs+2)
     
         if i == 2  or i == 0:
             axs[i].set_ylabel('Predicted CPU (%)', fontsize=fs)
@@ -393,8 +385,8 @@ if data_sets[dataset_plot] == 'Alibaba':
         # max_val = max(max_val,max(max(results_j['y_test']),max(results_j['y_test_pred'])))
         plt.plot(results_j['a_itr'],results_j['b_itr'],'o-',color=colors[counter],label=algorithms_conv[counter], linewidth=3.0)
     
-    plt.xlabel('Iteration', fontsize=fs+2)
-    plt.ylabel('RMSE', fontsize=fs+2)
+    plt.xlabel('Iteration', fontsize=fs+4)
+    plt.ylabel('RMSE', fontsize=fs+4)
     plt.xticks(fontsize=fs+2)
     plt.yticks(fontsize=fs+2)
     # plt.xlim(0)

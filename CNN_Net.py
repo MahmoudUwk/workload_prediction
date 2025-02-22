@@ -3,9 +3,7 @@ import keras
 from tensorflow.keras import layers
 from keras.optimizers import Adam
 from tensorflow.keras.losses import Huber
-import tensorflow as tf
-from tensorflow import keras
-from tensorflow.keras import layers
+
 
 def build_cnn_model(input_shape,num_filter=64, num_classes=1):
     """
@@ -66,7 +64,7 @@ reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.8, patience=15, min_l
 
 scaler = 100
 num_epoc = 7000
-batch_size = 2**8
+batch_size = 2**10
 patientce_para = 15
 lr = 0.0005
 seq_len =  32#get_best_lsmt_para(0)['seq']

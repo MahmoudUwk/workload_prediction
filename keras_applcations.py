@@ -117,7 +117,7 @@ from utils_WLP import get_dict_option,get_lstm_model,model_serv,RMSE,log_results
 import time
 scaler = 100
 num_epoc = 7000
-batch_size = 2**7
+batch_size = 2**14
 use_bn = True
 lr = 0.001
 seq_len = 32# get_best_lsmt_para(0)['seq']

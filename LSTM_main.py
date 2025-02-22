@@ -1,20 +1,25 @@
 import os
 from keras.callbacks import EarlyStopping
-import numpy as np
 from tensorflow.keras.callbacks import ReduceLROnPlateau
+import numpy as np
+from tensorflow.keras import mixed_precision
+mixed_precision.set_global_policy('mixed_float16')
+
 from keras.optimizers import Adam
-from utils_WLP import save_object, expand_dims,get_en_de_lstm_model_attention,RMSE,MAPE,MAE
-from utils_WLP import switch_model_CSA,get_dict_option,get_lstm_model,model_serv,get_best_lsmt_para,get_en_de_lstm_model_attentionV2
+from utils_WLP import save_object, expand_dims,get_en_de_lstm_model_attention,RMSE,MAPE,MAE, switch_model_CSA,get_dict_option,get_lstm_model,model_serv,get_best_lsmt_para,get_en_de_lstm_model_attentionV2
 import time
-flag_datasets = [0]
-flag_models = [2]
+
+flag_datasets = [1]
+flag_sav = 1
+
+flag_models = [1]
 data_set_flags = ['Alibaba','BB']
 seqs = [29,20,32]
-models_lstm = ['EnDeAtt','LSTM','TST_LSTM']
+models_lstm = ['EnDeAtt','LSTM','TempoSight']
 scaler = 100
 num_epoc = 700
 
-batch_sizes = [2**6,2**7]
+batch_sizes = [2**9,2**14]
 
 # lr = 0.001
 
@@ -55,14 +60,14 @@ for flag_dataset in flag_datasets:
         y_val = expand_dims(expand_dims(y_val))
         #%%
         batch_size = batch_sizes[flag_dataset]
-        lr = 0.001*batch_size/2**7
-        reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.8, patience=10, min_lr=2e-4)
+        # lr = 0.001*batch_size/2**7
+        reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.8
+                                      , patience=5, min_lr=3e-4)
     
         model  = switch_model_CSA(models_lstm[flag_model],input_dim,output_dim,best_params)
-        model.compile(optimizer=Adam(learning_rate=lr), loss='MAE') 
-     
+        model.summary()
         callbacks_list = [EarlyStopping(monitor='val_loss', 
-                            patience=15, restore_best_weights=True),reduce_lr]
+                            patience=20, restore_best_weights=True),reduce_lr]
         
         start_train = time.time()
 
@@ -77,24 +82,24 @@ for flag_dataset in flag_datasets:
         row_alibaba = [RMSE(y_test*scaler,y_test_pred),MAE(y_test*scaler,y_test_pred)
                        ,MAPE(y_test*scaler,y_test_pred)]
         
-        
-        save_name = data_set_flags[flag_dataset]+models_lstm[flag_model]
-        filename = os.path.join(sav_path,save_name+'.obj')
-        y_test_pred_list = []
-        rmse_list = []
-        start_test = time.time()
-        
-        y_test_pred_list,rmse_list = model_serv(X_test_list,y_test_list,model,scaler,batch_size)
-        
-        
-        end_test = time.time()
-        test_time = end_test - start_test
-        val_loss = history.history['val_loss']
-        train_loss = history.history['loss']
-        obj = {'test_time':test_time,'train_time':train_time
-               ,'y_test':y_test_list,'y_test_pred':y_test_pred_list
-               ,'scaler':scaler,'rmse_list':np.array(rmse_list)
-               ,'best_params':best_params,'Mids_test':Mids_test,'val_loss':val_loss
-               ,'train_loss':train_loss}
-        save_object(obj, filename)
+        if (flag_model in [0,1]) or (flag_sav == 1):
+            save_name = data_set_flags[flag_dataset]+models_lstm[flag_model]
+            filename = os.path.join(sav_path,save_name+'.obj')
+            y_test_pred_list = []
+            rmse_list = []
+            start_test = time.time()
+            
+            y_test_pred_list,rmse_list = model_serv(X_test_list,y_test_list,model,scaler,batch_size)
+            
+            
+            end_test = time.time()
+            test_time = end_test - start_test
+            val_loss = history.history['val_loss']
+            train_loss = history.history['loss']
+            obj = {'test_time':test_time,'train_time':train_time
+                   ,'y_test':y_test_list,'y_test_pred':y_test_pred_list
+                   ,'scaler':scaler,'rmse_list':np.array(rmse_list)
+                   ,'best_params':best_params,'Mids_test':Mids_test,'val_loss':val_loss
+                   ,'train_loss':train_loss}
+            save_object(obj, filename)
         print(row_alibaba)

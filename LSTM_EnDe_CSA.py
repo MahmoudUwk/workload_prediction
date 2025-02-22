@@ -9,7 +9,7 @@ import pandas as pd
 from utils_WLP import save_object , model_serv,loadDatasetObj,save_object,MAPE,MAE,RMSE,get_lstm_model
 from utils_WLP import get_data_CSA,switch_model_CSA , switch_para_CSA, expand_dims,list_to_array,get_en_de_lstm_model_attention,get_dict_option,log_results_EB0
 from niapy.algorithms.basic import CuckooSearch
-
+from tensorflow.keras.callbacks import ReduceLROnPlateau
 
 #%%
 
@@ -35,9 +35,11 @@ class LSTMHyperparameterOptimization(Problem):
         input_dim=(X_train.shape[1],X_train.shape[2])
 
         model = switch_model_CSA(self.model_name,input_dim,output_dim,params)
+        reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5
+                                      , patience=4, min_lr=5e-5)
 
         callbacks_list = [EarlyStopping(monitor='val_loss', 
-                                        patience=15, restore_best_weights=True)]#,lr_scheduler]
+                                        patience=15, restore_best_weights=True),reduce_lr]#,lr_scheduler]
         start_train = time.time()
         history = model.fit(X_train, y_train, epochs=self.num_epoc , 
                   batch_size=self.batch_size, verbose=2, shuffle=True, 
@@ -69,15 +71,20 @@ class LSTMHyperparameterOptimization(Problem):
         print("RMSE:",row_log[0])
         return  row_log[0]
 #%%
-flag_dataset = 2
-data_set = ['Alibaba','google','BB'][flag_dataset]
+flag_dataset = 0
+data_set = ['Alibaba','BB'][flag_dataset]
 flag_model = 2
 model_name =  ['EnDeAtt','LSTM','TST_LSTM'][flag_model]
 
+run_search= 1
+pop_size= 3
+num_epoc = 700
+FF_itr = 10
+batch_size = 2**8
+
+vb = 1
 func_para = switch_para_CSA(model_name)
 dim = len(func_para([]))
-
-
 
 
 if data_set== 'Alibaba':
@@ -93,13 +100,7 @@ sav_path = os.path.join(sav_path,model_name)
 if not os.path.exists(sav_path):
     os.makedirs(sav_path)
 
-run_search= 1
-pop_size= 5
-num_epoc = 700
-FF_itr = 15
-batch_size = 2**12
 
-vb = 1
 #%%
 algorithm = CuckooSearch(population_size = pop_size) 
 

@@ -2,13 +2,52 @@ import pandas as pd
 import numpy as np
 import pickle
 import os
+from tensorflow.keras import models
 from keras.optimizers import Adam
 from datetime import datetime, timedelta
 from sklearn.preprocessing import MinMaxScaler
 import tensorflow as tf
+from tensorflow.keras import  regularizers
 from tensorflow.keras.losses import Huber
+from tensorflow import keras
+from tensorflow.keras import layers
 #%%
+def log_results_EB1(row,cols,save_name):
+    if not os.path.isfile(save_name):
+        df3 = pd.DataFrame(columns=cols)
+        df3.to_csv(save_name,index=False)   
+    df = pd.read_csv(save_name)
+    df.loc[len(df)] = row
+    flag = 0
+    if len(df)!=0:
+        if row[0] == df.min()['RMSE']:
+            flag = 1
+    else:
+        flag = 1
+    df.to_csv(save_name,mode='w', index=False,header=True)
+    return flag
 
+def log_and_save(row_log,cols,data_set,model_name,sav_path,X_test_list,y_test_list,model,batch_size,scaler,train_time,Mids_test):
+    import time
+    save_name = data_set+model_name
+    flag_sav = log_results_EB1(row_log,cols,os.path.join(sav_path,save_name+'.csv'))
+    if flag_sav == 1:
+        filename = os.path.join(sav_path,save_name+'.obj')
+        start_test = time.time()
+        y_test_pred_list,rmse_list = model_serv(X_test_list,y_test_list,model,scaler,batch_size)
+        end_test = time.time()
+        test_time = end_test - start_test
+        val_loss = row_log[0]
+        train_loss = row_log[0]
+        obj = {'test_time':test_time,'train_time':train_time
+               ,'y_test':y_test_list,'y_test_pred':y_test_pred_list
+               ,'scaler':scaler,'rmse_list':np.array(rmse_list)
+               ,'Mids_test':Mids_test,'val_loss':val_loss
+               ,'train_loss':train_loss}
+        save_object(obj, filename)
+    
+    print("RMSE:",row_log[0])
+    
 def shift_right(lst, n):
     n = n % len(lst)
     return lst[-n:] + lst[:-n]
@@ -20,7 +59,7 @@ def write_txt(txt,fname):
     
     
 def flatten(xss):
-    return [x for xs in xss for x in xs]
+    return np.array([x for xs in xss for x in xs])
 
 def drop_col_nan_inf(df):
     df.replace([np.inf, -np.inf], np.nan, inplace=True)
@@ -559,7 +598,7 @@ def model_serv(X_list,Y_list,model,scaler,batch_size):
     y_test_pred_list = []
     rmse_list = []
     for c,test_sample in enumerate(X_list):
-        pred_i = model.predict(test_sample) *scaler
+        pred_i = model.predict(test_sample,verbose=0) *scaler
         y_test_pred_list.append(pred_i )
 
         rmse_i_list = RMSE(Y_list[c]*scaler,pred_i)
@@ -822,82 +861,19 @@ def Enhanced_EfficientNet_Like_1D(input_shape, num_classes=1, base_filters=32, b
     return model 
     
 
-#%%
 
-
-from tensorflow import keras
-from tensorflow.keras import layers
-
-def get_CEDL(encoder_inputs,units):
-    num_layers = 1
-    encoder_outputs = layers.LSTM(units, return_sequences=True)(encoder_inputs)
-    for i in range(num_layers - 1):
-        encoder_outputs = layers.LSTM(units, return_sequences=True, name=f"encoder_lstm_{i+1}")(encoder_outputs)
-    encoder_outputs, state_h, state_c = layers.LSTM(units, return_sequences=True, return_state=True, name=f"encoder_lstm_{num_layers}")(encoder_outputs)
-    encoder_states = [state_h, state_c]
-    context = layers.RepeatVector(1, name="context_vector")(encoder_outputs[:, -1, :])
-    decoder = layers.LSTM(units, return_sequences=True, name="decoder_lstm_0")(context, initial_state=encoder_states)
-    for i in range(num_layers - 1):
-        decoder = layers.LSTM(units, return_sequences=True, name=f"decoder_lstm_{i+1}")(decoder)
-    attention_layer = layers.AdditiveAttention(name="attention_layer")
-    attention_output = attention_layer([decoder, encoder_outputs])
-    decoder_combined_context = layers.concatenate([decoder, attention_output], axis=-1)
-    outputs = layers.Dense(units, activation='swish')(decoder_combined_context)
-    outputs = layers.Flatten()(outputs)
-    return outputs
-
-def create_patch_tst_lstm_hybrid(input_shape, pred_len=1, 
-                 patch_length=16, num_heads=4,LSTM_units=256):
-
-    inputs = keras.Input(shape=input_shape)  # Input shape: (sequence_length, num_features)
-    sequence_length = input_shape[0]
-    num_features = input_shape[1]
-
-    # 1. Patch TST Block
-    # Divide the time series into patches
-    num_patches = sequence_length // patch_length
-    x_patches = layers.Reshape((num_patches, patch_length * num_features))(inputs)  # Shape: (batch_size, num_patches, patch_length * num_features)
-    
-    # Transformer Encoder for Patch TST
-    transformer_output = layers.MultiHeadAttention(num_heads=num_heads, key_dim=patch_length * num_features)(x_patches, x_patches)
-    transformer_output = layers.LayerNormalization(epsilon=1e-6)(transformer_output + x_patches)  # Add & Norm
-    transformer_output = layers.GlobalAveragePooling1D()(transformer_output)  # Aggregate patch-level features
-
-    # 2. LSTM Block
-    x_lstm = get_CEDL(inputs,LSTM_units)
-    x = layers.concatenate([transformer_output, x_lstm])  # Combine Patch TST and LSTM outputs
-
-    # 4. Dense Layers
-
-    x = layers.Dense(LSTM_units*2, activation="swish")(x)
-    outputs = layers.Dense(pred_len)(x)  # Predict the next `pred_len` time steps
-    model = keras.Model(inputs=inputs, outputs=outputs)
-    # Huber(delta=1) 'MAE'
-    model.compile(optimizer='adam', loss='MAE',metrics=[ 'mape']) 
-    return model
-#%%
-
-def get_best_lsmt_para(flag,flag_dataset=0):
-    #flag 0 for En-De LSMT, 1 for normal lstm
-    if flag == 0:
-        return {'units': 256, 'num_layers': 1, 'seq': 29, 'dense_units': 256}
-    elif flag == 1:
-        return {'units': 256, 'num_layers': 2, 'seq': 20, 'dense_units': 256}
-    elif flag == 2:
-        if flag_dataset == 0:
-            return   {'LSTM_units': 256,'num_heads': 4}
-        else:
-            return   {'LSTM_units': 256,'num_heads': 4}
         #%%
 def get_hybrid_hyperparameters(x):
     """Get hyperparameters for solution `x`."""
     if isinstance(x, list) and x==[]:
-        x = [0,0]
-    LSTM_units = 2**int(x[0]*4 + 6)
-    num_heads = int(x[1]*8+2)
+        x = [0]*5
+    LSTM_units = 2**int(x[0]*4+ 7)
+    num_layers = int(x[1]*4+1)
+    ff_dim = 2**int(x[2]*5+ 6)
     params =  {
         'LSTM_units': LSTM_units,
-        'num_heads': num_heads,
+        'num_layers': num_layers,
+        'ff_dim':ff_dim,
     }
     # print(params)
     return params
@@ -927,19 +903,11 @@ def switch_para_CSA(model_name):
         func_para = get_hyperparameters_LSTM
     elif model_name == 'TST_LSTM': 
         func_para = get_hybrid_hyperparameters
+    elif model_name == 'Exp': 
+        func_para = get_hybrid_hyperparameters
     return func_para
         
         
-def switch_model_CSA(model_name,input_dim,output_dim,params):
-    if model_name == 'LSTM':
-        model = get_lstm_model(input_dim,output_dim,**params)
-    elif model_name == 'EnDeAtt':
-        model = get_en_de_lstm_model_attention(input_dim,output_dim,**params)
-    elif model_name == 'TST_LSTM':
-        # model = create_patch_tst_lstm_hybrid(input_dim,**params)
-        model = temposightV2(input_dim,**params)
-    return model
-      
 
 def get_data_CSA(params,data_set):
     scaler=100
@@ -967,63 +935,237 @@ def get_data_CSA(params,data_set):
     y_val = expand_dims(expand_dims(y_val))
     return X_train,y_train,X_val,y_val,X_test ,y_test,scaler,X_test_list,y_test_list,Mids_test
 
-
-
+#%%
+def switch_model_CSA(model_name,input_dim,output_dim,params):
+    if model_name == 'LSTM':
+        model = get_lstm_model(input_dim,output_dim,**params)
+    elif model_name == 'EnDeAtt':
+        model = get_en_de_lstm_model_attention(input_dim,output_dim,**params)
+    elif model_name == 'TempoSight':
+        model = TempoSight(input_dim)
+    return model
 
 #%%
+def get_best_lsmt_para(flag,flag_dataset=0):
+    #flag 0 for En-De LSMT, 1 for normal lstm
+    if flag == 0:
+        return {'units': 256, 'num_layers': 1, 'seq': 29, 'dense_units': 256}
+    elif flag == 1:
+        return {'units': 256, 'num_layers': 2, 'seq': 20, 'dense_units': 256}
+    elif flag == 2:
+        return   {'LSTM_units': 256,'num_heads': 4}
+    elif flag == 3:
+        return   {'num_heads': 4,  'lstm_units':128,
+                  'ff_dim':256, 'num_layers':2, 'dropout_rate':0.2}
+
+#%%import tensorflow as tf
 
 
-def transformer_block(x, num_heads, key_dim, ff_dim, dropout_rate=0.1):
-    """
-    A full Transformer block consisting of:
-    - MultiHeadAttention
-    - Add & Norm (LayerNormalization + Residual Connection)
-    - Feed-Forward Network (FFN)
-    - Add & Norm
-    """
-    # MultiHeadAttention
-    attn_output = layers.MultiHeadAttention(num_heads=num_heads, key_dim=key_dim)(x, x)
+class AttentionPooling(layers.Layer):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # Learnable parameters for attention scoring
+        self.query = layers.Dense(1, activation='tanh')  # Tracked by the layer
+
+    def call(self, x):
+        scores = self.query(x)  # (batch_size, num_patches, 1)
+        attention_weights = tf.nn.softmax(scores, axis=1)
+        # Weighted sum
+        return tf.reduce_sum(x * attention_weights, axis=1)
+
+    def get_config(self):
+        return super().get_config()
+
+def hybrid_loss(y_true, y_pred, alpha=0.7):
+    mae = 100*tf.keras.losses.MAE(y_true, y_pred)
+    mse = 100*tf.keras.losses.MSE(y_true, y_pred)
+    return alpha * mae + (1 - alpha) * mse
+
+# --- Custom Learnable Positional Encoding Layer V2 ---
+class LearnablePositionalEncodingV2(layers.Layer):
+    def __init__(self, num_positions, d_model, embedding_regularizer=None, **kwargs):
+        """
+        Args:
+          num_positions: int, the number of positions (e.g., number of patches).
+          d_model: int, the dimension of the embeddings.
+          embedding_regularizer: tf.keras.regularizers.Regularizer, regularizer for embedding layer.
+        """
+        super().__init__(**kwargs)
+        self.num_positions = num_positions
+        self.d_model = d_model
+        # Create a trainable embedding layer for positions with optional regularization.
+        self.pos_embedding = layers.Embedding(
+            input_dim=num_positions,
+            output_dim=d_model,
+            embeddings_regularizer=embedding_regularizer
+        )
+
+    def call(self, x):
+        """
+        Args:
+          x: Tensor of shape (batch_size, num_positions, d_model)
+        Returns:
+          Tensor with learnable positional encoding added.
+        """
+        # Create a tensor of positions [0, 1, 2, ..., num_positions-1]
+        positions = tf.range(start=0, limit=self.num_positions, delta=1)
+        # Get the corresponding embeddings; shape: (num_positions, d_model)
+        pos_embeddings = self.pos_embedding(positions)
+        # Broadcast and add to x.
+        return x + pos_embeddings
+
+    def get_config(self):
+        config = super().get_config().copy()
+        config.update({
+            'num_positions': self.num_positions,
+            'd_model': self.d_model,
+            'embedding_regularizer': tf.keras.regularizers.serialize(self.pos_embedding.embeddings_regularizer)
+        })
+        return config
+
+# --- REVERT TO POST-LAYER NORM TRANSFORMER BLOCK ---
+def simplified_transformer_blockV2(x, num_heads, d_model, transformer_ff_dim, dropout_rate=0.1):
+    key_dim = d_model // num_heads
+    
+    # Multi-head self-attention with dropout (ORIGINAL POST-LN VERSION)
+    attn_output = layers.MultiHeadAttention(
+        num_heads=num_heads, key_dim=key_dim, dropout=dropout_rate
+    )(x, x, x)
     attn_output = layers.Dropout(dropout_rate)(attn_output)
-    # Add & Norm
-    x = layers.LayerNormalization(epsilon=1e-6)(x + attn_output)
-
-    # Feed-Forward Network (FFN)
-    ffn_output = layers.Dense(ff_dim, activation="relu")(x)
-    ffn_output = layers.Dense(key_dim)(ffn_output)
+    
+    # Residual connection and layer normalization
+    x = layers.Add()([x, attn_output])
+    x = layers.LayerNormalization(epsilon=1e-6)(x)
+    
+    # Feed-forward network with dropout
+    ffn_output = layers.Dense(transformer_ff_dim, activation="gelu")(x)
     ffn_output = layers.Dropout(dropout_rate)(ffn_output)
-    # Add & Norm
-    x = layers.LayerNormalization(epsilon=1e-6)(x + ffn_output)
-
+    ffn_output = layers.Dense(d_model)(ffn_output)
+    
+    # Residual connection and layer normalization
+    x = layers.Add()([x, ffn_output])
+    x = layers.LayerNormalization(epsilon=1e-6)(x)
     return x
 
-def temposightV2(input_shape, pred_len=1, patch_length=16, num_heads=4, LSTM_units=256):
-    inputs = layers.Input(shape=input_shape)  # Input shape: (sequence_length, num_features)
-    sequence_length = input_shape[0]
-    num_features = input_shape[1]
+def get_CEDL2_V2(encoder_inputs, units, num_layers=1):
+    x = encoder_inputs
+    # --- Encoder ---
+    for i in range(num_layers - 1):
+        x = layers.LSTM(units, return_sequences=True, name=f"encoder_lstm_{i+1}")(x)
+    encoder_outputs, state_h, state_c = layers.LSTM(
+        units, return_sequences=True, return_state=True, name=f"encoder_lstm_{num_layers}"
+    )(x)
 
-    # 1. Patch TST Block
-    # Divide the time series into patches
-    num_patches = sequence_length // patch_length
-    x_patches = layers.Reshape((num_patches, patch_length * num_features))(inputs)  # Shape: (batch_size, num_patches, patch_length * num_features)
+    # --- Skip Connection: Directly pass encoder outputs to decoder ---
+    skip_connection = layers.Dense(units, name="skip_projection")(encoder_outputs)
 
-    # Add two full Transformer layers
-    for _ in range(2):  # Two Transformer layers
-        x_patches = transformer_block(x_patches, num_heads=num_heads, key_dim=patch_length * num_features, ff_dim=512)
+    # --- Context Extraction ---
+    context = layers.Lambda(lambda t: t[:, -1, :], name="context_extraction")(encoder_outputs)
+    context = layers.RepeatVector(1, name="context_vector")(context)
 
-    # Aggregate patch-level features
-    transformer_output = layers.GlobalAveragePooling1D()(x_patches)
+    # --- Decoder Initial State Preparation ---
+    decoder_initial_state_h = layers.Dense(units, activation='relu', name='decoder_initial_state_h')(state_h)
+    decoder_initial_state_c = layers.Dense(units, activation='relu', name='decoder_initial_state_c')(state_c)
 
-    # 2. LSTM Block
-    x_lstm = get_CEDL(inputs, LSTM_units)
+    # --- Decoder Input with Skip Connection ---
+    decoder_input = layers.Concatenate(axis=-1)([context, skip_connection[:, -1:, :]])
 
-    # 3. Combine Patch TST and LSTM outputs
-    x = layers.concatenate([transformer_output, x_lstm])
+    # --- Decoder LSTM ---
+    decoder = layers.LSTM(
+        units,
+        return_sequences=True,
+        name="decoder_lstm"
+    )(decoder_input, initial_state=[decoder_initial_state_h, decoder_initial_state_c])
 
-    # 4. Dense Layers
-    x = layers.Dense(LSTM_units * 2, activation="swish")(x)
-    outputs = layers.Dense(pred_len)(x)  # Predict the next `pred_len` time steps
+    # --- Attention Mechanism ---
+    attention_layer = layers.Attention(name="attention_layer")
+    attention_output = attention_layer([decoder, encoder_outputs])
 
-    # Build the model
-    model = keras.Model(inputs=inputs, outputs=outputs)
-    model.compile(optimizer='adam', loss='MAE', metrics=['mape'])
+    # --- Final Output with Skip Enhancement ---
+    decoder_combined_context = layers.Concatenate(axis=-1)([decoder, attention_output])
+    outputs = layers.Dense(units, activation='gelu')(decoder_combined_context)
+    outputs = layers.Flatten()(outputs)
+
+    return outputs
+
+# --- Optimized Parallel Model V3 with Learnable Positional Encoding and Attention Merging ---
+def TempoSight(
+    input_shape=(32, 2),
+    pred_len=1,
+    patch_length=16, 
+    lstm_units=128,
+    lstm_layers=3,
+    num_heads=4,
+    transformer_ff_dim=512,
+    num_transformer_layers=4,
+    bottle_neck=8,
+    dropout_rate=0.2,
+    fusion_dim=64,
+    embedding_reg_factor=0.01
+):
+    """
+    Builds a parallel model with two branches:
+      1. A PatchTST branch (transformer-based) using learnable positional encoding.
+      2. An LSTM branch (encoder-decoder with multiplicative attention).
+    Their outputs are merged and used to forecast a one-step ahead value.
+    """
+    inputs = layers.Input(shape=input_shape, name="model_input")
+    seq_len, num_features = input_shape
+
+    # --- Branch 1: PatchTST (Transformer-based) ---
+    if seq_len % patch_length != 0:
+        raise ValueError("patch_length must evenly divide the sequence length.")
+    num_patches = seq_len // patch_length
+
+    # Reshape input into patches
+    x_patch = layers.Reshape((num_patches, patch_length * num_features))(inputs)
+
+    # d_model for the transformer branch (set to be equal to the patch representation size)
+    d_model = patch_length * num_features
+
+    # Use learnable positional encoding with L2 regularization.
+    embedding_regularizer = regularizers.l2(embedding_reg_factor)
+    x_patch = LearnablePositionalEncodingV2(
+        num_positions=num_patches,
+        d_model=d_model,
+        embedding_regularizer=embedding_regularizer,
+        name="learnable_pos_enc"
+    )(x_patch)
+
+        # Pass through transformer blocks.
+    for i in range(num_transformer_layers):
+        x_patch = simplified_transformer_blockV2(
+            x_patch, num_heads, d_model, transformer_ff_dim, dropout_rate
+        )
+
+
+    # Pooling for the PatchTST branch
+    patch_features = AttentionPooling(name="attention_pooling")(x_patch)
+    # Bottleneck for the PatchTST branch
+    bottleneck_patch = layers.Dense(bottle_neck, activation="gelu", name="bottleneck_patch")(patch_features)
+
+    # --- Branch 2: LSTM (Encoder-Decoder) ---
+    lstm_features = get_CEDL2_V2(inputs, lstm_units, num_layers=lstm_layers)
+    # Bottleneck for the LSTM branch
+    bottleneck_lstm = layers.Dense(bottle_neck, activation="gelu", name="bottleneck_lstm")(lstm_features)
+
+    # --- Merging the Branches ---
+    # Concatenate the two bottleneck vectors
+    merged = layers.Concatenate()([bottleneck_patch, bottleneck_lstm])
+
+    # Optional: Gating mechanism
+    gate = layers.Dense(1, activation="sigmoid")(merged)
+    merged = gate * bottleneck_patch + (1 - gate) * bottleneck_lstm
+
+    # Final dense layers
+    merged = layers.Dense(fusion_dim, activation="gelu")(merged)
+    merged = layers.Dropout(dropout_rate)(merged)
+    outputs = layers.Dense(pred_len)(merged)
+
+    model = models.Model(inputs=inputs, outputs=outputs, name="TempoSight")
+# CHANGE THIS IN MODEL COMPILE:
+    model.compile(optimizer=Adam(learning_rate=0.002, clipvalue=1),  # Was 0.002/clipnorm
+              loss=hybrid_loss,
+              metrics=["mape"])    
     return model
+
