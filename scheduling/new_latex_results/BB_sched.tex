@@ -1,0 +1,39 @@
+% filepath: c:\Users\mahmo\OneDrive\Desktop\kuljeet\Cloud project\workload_prediction\scheduling\bb_results_analysis.tex
+\subsection{Analysis of Bitbrains (BB) Dataset Results}
+\label{subsec:bb_results}
+
+The Bitbrains (BB) dataset results, presented in Table~\ref{tab:bb_results_summary}, offer a contrasting perspective on the effectiveness of CPU prediction-based scheduling compared to the Alibaba dataset. These results further emphasize the critical importance of prediction accuracy while revealing some interesting dynamics that arise from prediction errors.
+
+\subsubsection{Comparative Analysis of Scheduling Policies}
+
+The BB dataset results show distinct patterns across different workload sizes and scheduling policies. For all workload sizes, the Green-Oblivious (GO) policy consistently achieves the lowest energy consumption (103.77 Wh for small, 218.67 Wh for medium, and 357.42 Wh for large workloads). However, unlike in the Alibaba dataset, the GO policy in the BB dataset achieves a GEUF of 0\% across all workload sizes, indicating that with this particular workload and solar profile, the default immediate scheduling approach completely fails to utilize available green energy.
+
+The Naive Carbon-Aware (NCA) policy, with its perfect knowledge of future CPU utilization, achieves significant improvements in green energy utilization compared to the GO baseline. For small workloads, the NCA policy reaches a GEUF of 49.05\% and consumes 60.12 Wh of green energy. For medium workloads, it achieves a GEUF of 37.28\% and 120.95 Wh of green energy. For large workloads, it attains a GEUF of 34.36\% and 206.14 Wh of green energy. This substantial difference between the GO and NCA policies underscores the potential benefits of carbon-aware scheduling in scenarios where immediate scheduling would otherwise miss all opportunities for green energy utilization.
+
+The Predictive Carbon-Aware (PCA) policy shows mixed performance relative to the oracle NCA policy. For small workloads, PCA achieves a lower GEUF (43.19\%) compared to NCA (49.05\%) and consumes less green energy (47.34 Wh vs. 60.12 Wh). This indicates that prediction errors resulted in suboptimal scheduling decisions for small workloads. However, for medium workloads, the PCA policy slightly outperforms the NCA policy in terms of GEUF (37.48\% vs. 37.28\%), though it consumes less green energy in absolute terms (90.15 Wh vs. 120.95 Wh). For large workloads, the PCA policy again outperforms the NCA policy in terms of GEUF (36.04\% vs. 34.36\%) but consumes significantly less green energy (140.86 Wh vs. 206.14 Wh).
+
+\subsubsection{The Impact of Prediction Accuracy on Performance}
+
+The performance difference between the PCA and NCA policies in the BB dataset highlights the complex relationship between CPU prediction accuracy and scheduling effectiveness. The inconsistent performance of the PCA policy relative to the oracle policy across different workload sizes suggests that:
+
+\begin{enumerate}
+    \item \textbf{Prediction Errors}: The CPU utilization predictions used for the BB dataset likely contain more significant errors compared to those used for the Alibaba dataset, leading to more variable performance.
+    
+    \item \textbf{Error Directionality}: The nature of prediction errors (over-prediction vs. under-prediction) can have asymmetric effects on scheduling decisions. In the BB dataset, it appears that prediction errors occasionally lead to more conservative scheduling during periods of high solar availability, which can paradoxically improve GEUF percentages while reducing absolute green energy consumption.
+    
+    \item \textbf{Workload Characteristics}: The interaction between workload characteristics (size, duration) and prediction accuracy appears to be significant. Larger workloads seem more robust to certain types of prediction errors, possibly because their longer durations allow them to span more varied solar availability periods.
+\end{enumerate}
+
+An interesting observation is that while the PCA policy sometimes achieves higher GEUF percentages than the NCA policy (for medium and large workloads), it consistently consumes less energy overall and less green energy in absolute terms. This suggests that prediction errors in the BB dataset may be leading to scheduling decisions that avoid high-energy-consumption periods altogether, resulting in lower total energy usage but also fewer opportunities to exploit green energy.
+
+\subsubsection{Trade-offs Between Energy Efficiency and Green Energy Utilization}
+
+The BB dataset results reveal important trade-offs between energy efficiency and green energy utilization. The GO policy minimizes total energy consumption but fails to utilize any green energy. The NCA policy maximizes absolute green energy consumption but increases total energy usage by 13.7\% (for small workloads), 31.9\% (for medium), and 48.9\% (for large) compared to GO. The PCA policy strikes a balance, increasing energy consumption less dramatically (by 2.9\% for small, 5.0\% for medium, and 5.0\% for large workloads) while still achieving substantial GEUF improvements.
+
+These trade-offs highlight the importance of considering both energy efficiency and green energy utilization when evaluating scheduling policies. While maximizing green energy utilization is a key objective for reducing carbon footprint, excessive increases in total energy consumption could offset some of these benefits.
+
+\subsubsection{Critical Role of Prediction Quality}
+
+The BB dataset results strongly emphasize that the quality of CPU utilization predictions is a critical factor in the effectiveness of carbon-aware scheduling. When predictions contain significant errors, the PCA policy's performance becomes less predictable and may deviate substantially from the theoretically optimal performance of the oracle policy.
+
+This finding underscores the importance of developing and deploying highly accurate CPU utilization prediction models to realize the full potential of carbon-aware scheduling in production datacenter environments. As our results demonstrate, even with imperfect predictions, substantial improvements in green energy utilization are possible compared to carbon-oblivious approaches, but the magnitude of these improvements—and their consistency across different workload characteristics—depends heavily on prediction accuracy.

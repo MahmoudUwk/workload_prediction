@@ -1,0 +1,97 @@
+% filepath: c:\Users\mahmo\OneDrive\Desktop\kuljeet\Cloud project\workload_prediction\scheduling\simulation_methodology.tex
+\subsection{Simulation Methodology}
+\label{subsec:simulation_methodology}
+
+To evaluate the impact of CPU utilization prediction on carbon-aware workload scheduling, we implemented a comprehensive simulation framework that models datacenter operations under various scheduling policies. Our framework enables a controlled comparison between different approaches to workload scheduling, with a specific focus on maximizing green energy utilization.
+
+\subsubsection{Simulation Design and Workflow}
+The simulation workflow consists of several interconnected components:
+
+\begin{enumerate}
+    \item \textbf{Data Preparation}: CPU utilization data (both actual and predicted) is sourced from pre-trained models applied to Alibaba and Bitbrains (BB) datacenter traces, sampled at 5-minute intervals. Solar photovoltaic (PV) generation data is upsampled from 15-minute resolution to match the 5-minute CPU data using linear interpolation, then normalized to a [0,1] range to represent relative green energy availability.
+    
+    \item \textbf{Workload Generation}: Workloads with specific CPU requirements and durations are generated according to three load sizes (small, medium, and large), representing different levels of datacenter utilization.
+    
+    \item \textbf{Scheduling Decision}: For each workload, the simulator applies one of three scheduling policies to determine the optimal execution window, considering both resource availability and green energy utilization.
+    
+    \item \textbf{Energy Calculation}: The energy consumption and green energy utilization for each scheduled workload are calculated based on a power model that translates CPU utilization into power consumption.
+    
+    \item \textbf{Metrics Aggregation}: Results are aggregated across multiple machines and presented as machine-averaged metrics to provide a comprehensive view of each policy's performance.
+\end{enumerate}
+
+\subsubsection{Scheduling Policies}
+We implemented and evaluated three distinct scheduling policies:
+
+\begin{itemize}
+    \item \textbf{Green-Oblivious (GO)}: This baseline policy schedules workloads as soon as sufficient computing resources become available, without considering green energy availability. It represents the traditional approach to datacenter workload scheduling.
+    
+    \item \textbf{Naive Carbon-Aware (NCA)}: This oracle policy leverages perfect knowledge of future CPU utilization and solar availability to schedule workloads during periods that maximize green energy utilization. While impractical in real-world scenarios due to its reliance on perfect foresight, it provides an upper bound on potential green energy utilization.
+    
+    \item \textbf{Predictive Carbon-Aware (PCA)}: This policy uses predicted CPU utilization alongside actual solar availability to make scheduling decisions. It represents a realistic approach to carbon-aware scheduling that could be implemented in practice.
+\end{itemize}
+
+Each policy uses the same fundamental scoring mechanism to evaluate potential scheduling windows:
+
+\begin{equation}
+\text{score} = \text{normalized\_solar} \times (1 - \text{normalized\_estimated\_power})
+\end{equation}
+
+where higher scores indicate more favorable windows, balancing high solar availability with low anticipated power consumption.
+
+\subsubsection{Simulation Parameters}
+Table~\ref{tab:simulation_parameters} summarizes the key parameters used in our simulation:
+
+\begin{table}[h]
+\centering
+\caption{Simulation Parameters and Configuration Values}
+\label{tab:simulation_parameters}
+\begin{tabular}{|l|p{6cm}|}
+\hline
+\textbf{Parameter} & \textbf{Value} \\
+\hline
+CPU Data Sampling Rate & 5 minutes \\
+\hline
+Solar PV Data Sampling Rate & 15 minutes (upsampled to 5 minutes) \\
+\hline
+Scheduling Window & 24 hours \\
+\hline
+Prediction Window & 12 hours \\
+\hline
+Server Configuration & 8 cores per machine \\
+\hline
+Power Model & Idle power + (Max power - Idle power) × CPU utilization \% \\
+\hline
+Workload Profiles & Small: 1-2 cores, 30-60 minutes\\
+& Medium: 2-4 cores, 60-120 minutes\\
+& Large: 4-6 cores, 120-180 minutes\\
+\hline
+Metrics & Energy Consumed (Wh), Green Energy (Wh), GEUF (\%) \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection{Data Preprocessing and Validation}
+The simulation framework incorporates several preprocessing steps to ensure data quality and consistency:
+
+\begin{itemize}
+    \item \textbf{Temporal Alignment}: CPU and solar data are aligned to a common time index to ensure accurate correlation between computational load and green energy availability.
+    
+    \item \textbf{Normalization}: Solar PV data is normalized to the [0,1] range, representing the relative availability of green energy throughout the day.
+    
+    \item \textbf{Validation Checks}: CPU utilization ranges are verified to ensure they fall within the expected 0-100\% range, with diagnostic logging implemented for the first processed machine per dataset.
+\end{itemize}
+
+\subsubsection{Implementation Details}
+The simulation engine was implemented in Python, with a modular design that separates data loading, scheduling logic, metrics calculation, and visualization. This design allows for easy experimentation with different algorithms, policies, and parameters. The core components include:
+
+\begin{itemize}
+    \item \textbf{Data Loader}: Handles dataset preparation, alignment, and filtering to specific algorithms.
+    
+    \item \textbf{Simulation Engine}: Implements the scheduling logic and policy-specific decision-making.
+    
+    \item \textbf{Metrics Calculator}: Computes energy consumption, green energy utilization, and prediction accuracy metrics.
+    
+    \item \textbf{Results Aggregator}: Combines and averages results across machines for clearer comparison.
+\end{itemize}
+
+Through this comprehensive simulation framework, we can systematically evaluate the impact of CPU utilization prediction accuracy on carbon-aware workload scheduling and quantify the potential benefits of different scheduling approaches.

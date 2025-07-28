@@ -1,0 +1,31 @@
+% filepath: c:\Users\mahmo\OneDrive\Desktop\kuljeet\Cloud project\workload_prediction\scheduling\alibaba_results_analysis.tex
+\subsection{Analysis of Alibaba Dataset Results}
+\label{subsec:alibaba_results}
+
+The Alibaba dataset results, summarized in Table~\ref{tab:alibaba_results_summary}, provide valuable insights into the performance of different scheduling policies across varying workload intensities. These results particularly highlight the critical role of CPU utilization prediction in enabling effective carbon-aware scheduling.
+
+\subsubsection{Impact of Scheduling Policies on Energy Metrics}
+
+Examining the energy consumption patterns across different policies reveals several key findings. For small workloads, the Green-Oblivious (GO) policy achieves the lowest energy consumption at 110.23 Wh, marginally outperforming both carbon-aware policies. However, this energy efficiency comes at the cost of significantly lower green energy utilization. The Naive Carbon-Aware (NCA) policy, with perfect knowledge of future CPU utilization, achieves the highest Green Energy Utilization Factor (GEUF) at 76.91\% and the greatest absolute green energy consumption at 86.54 Wh, demonstrating the substantial potential benefit of carbon-aware scheduling when prediction accuracy is perfect.
+
+For medium workloads, we observe a similar pattern where the GO policy minimizes total energy consumption (260.39 Wh) but achieves the lowest GEUF (22.33\%). The Predictive Carbon-Aware (PCA) policy slightly outperforms the oracle NCA policy in terms of GEUF (28.57\% vs. 28.12\%) and green energy consumption (74.52 Wh vs. 73.60 Wh). This counter-intuitive result—where prediction-based scheduling outperforms perfect-knowledge scheduling—suggests that the complex interaction between the scheduling algorithm's scoring function and prediction errors can occasionally yield favorable outcomes, particularly when predictions encourage more aggressive scheduling during high solar availability periods.
+
+The large workload scenario further reinforces this pattern, with GO achieving the lowest energy consumption (471.19 Wh), while the PCA policy attains the highest GEUF (26.39\%) and green energy consumption (117.64 Wh), again slightly outperforming the oracle policy. This consistent pattern across workload sizes is particularly noteworthy, suggesting that the prediction-based approach in the Alibaba dataset is highly effective at identifying opportune scheduling windows.
+
+\subsubsection{The Role of CPU Prediction Accuracy}
+
+The effectiveness of the PCA policy in the Alibaba dataset can be largely attributed to the quality of the underlying CPU utilization predictions. When prediction accuracy is high, the PCA policy can make near-optimal decisions that closely approximate those of the oracle NCA policy. In cases where the PCA policy slightly outperforms the NCA policy, this can be attributed to:
+
+\begin{enumerate}
+    \item \textbf{Favorable Bias}: Small prediction errors may sometimes lead to beneficial scheduling decisions if they encourage deferring workloads to periods with higher-than-expected solar availability.
+    
+    \item \textbf{Scoring Function Dynamics}: The scoring function used to evaluate potential scheduling windows may interact with prediction errors in ways that occasionally favor slightly inaccurate predictions over perfect knowledge, particularly when such errors lead to more conservative scheduling during periods of high solar availability.
+\end{enumerate}
+
+The relatively small gap between the energy consumption values of GO, NCA, and PCA policies (less than 3\% difference) indicates that carbon-aware scheduling need not significantly increase overall energy usage. This is an important finding, as it demonstrates that optimizing for green energy utilization does not necessarily come at the expense of energy efficiency.
+
+\subsubsection{Policy Performance Across Load Sizes}
+
+An interesting observation from the Alibaba results is the inverse relationship between workload size and achieved GEUF. Small workloads achieve the highest GEUF values (up to 76.91\%), medium workloads achieve moderate GEUF values (up to 28.57\%), and large workloads achieve the lowest GEUF values (up to 26.39\%). This pattern suggests that smaller, more flexible workloads can be more effectively scheduled to align with periods of high solar availability, while larger workloads, which require longer execution windows and more resources, present greater challenges for carbon-aware scheduling.
+
+The consistently strong performance of the PCA policy across all workload sizes in the Alibaba dataset demonstrates that accurate CPU utilization prediction is a critical enabler for effective carbon-aware scheduling in real-world scenarios. The ability of the PCA policy to achieve GEUF values comparable to—and in some cases exceeding—those of the oracle NCA policy underscores the practical viability of prediction-based approaches for reducing the carbon footprint of datacenter operations.

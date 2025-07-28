@@ -1,0 +1,24 @@
+\newcommand{\highlightcell}[1]{\textbf{#1}}
+
+\begin{table}[h!tbp]
+\centering
+\caption{Machine-averaged sustainability metrics for Alibaba (grouped by load size and scheduling policy). Highlighted cells indicate the best value per load size (↓ lower is better for Energy Consumed Wh ; ↑ higher is better for GEUF (\%), Green Energy Wh).}
+\label{tab:alibaba_results_summary}
+\begin{tabular}{|m{1.8cm}|m{1.5cm}|m{2.0cm}|m{2.0cm}|m{2.0cm}|}
+\toprule
+Load Size & Policy & Energy Consumed Wh & GEUF (\%) & Green Energy Wh \\
+\midrule
+SMALL & GO & \highlightcell{110.23} & 64.11 & 70.69 \\
+SMALL & NCA & 113.05 & \highlightcell{76.91} & \highlightcell{86.54} \\
+SMALL & PCA & 113.03 & 76.56 & 86.12 \\
+\midrule
+MEDIUM & GO & \highlightcell{260.39} & 22.33 & 57.93 \\
+MEDIUM & NCA & 264.14 & 28.12 & 73.60 \\
+MEDIUM & PCA & 263.91 & \highlightcell{28.57} & \highlightcell{74.52} \\
+\midrule
+LARGE & GO & \highlightcell{471.19} & 25.60 & 113.17 \\
+LARGE & NCA & 481.96 & 21.83 & 105.99 \\
+LARGE & PCA & 471.90 & \highlightcell{26.39} & \highlightcell{117.64} \\
+\bottomrule
+\end{tabular}
+\end{table}

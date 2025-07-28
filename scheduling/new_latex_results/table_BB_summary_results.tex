@@ -1,0 +1,24 @@
+\newcommand{\highlightcell}[1]{\textbf{#1}}
+
+\begin{table}[h!tbp]
+\centering
+\caption{Machine-averaged sustainability metrics for BB (grouped by load size and scheduling policy). Highlighted cells indicate the best value per load size (↓ lower is better for Energy Consumed Wh ; ↑ higher is better for GEUF (\%), Green Energy Wh).}
+\label{tab:bb_results_summary}
+\begin{tabular}{|m{1.8cm}|m{1.5cm}|m{2.0cm}|m{2.0cm}|m{2.0cm}|}
+\toprule
+Load Size & Policy & Energy Consumed Wh & GEUF (\%) & Green Energy Wh \\
+\midrule
+SMALL & GO & \highlightcell{103.77} & 0.00 & 0.00 \\
+SMALL & NCA & 117.95 & \highlightcell{49.05} & \highlightcell{60.12} \\
+SMALL & PCA & 106.78 & 43.19 & 47.34 \\
+\midrule
+MEDIUM & GO & \highlightcell{218.67} & 0.00 & 0.00 \\
+MEDIUM & NCA & 288.45 & 37.28 & \highlightcell{120.95} \\
+MEDIUM & PCA & 229.50 & \highlightcell{37.48} & 90.15 \\
+\midrule
+LARGE & GO & \highlightcell{357.42} & 0.00 & 0.00 \\
+LARGE & NCA & 532.08 & 34.36 & \highlightcell{206.14} \\
+LARGE & PCA & 375.42 & \highlightcell{36.04} & 140.86 \\
+\bottomrule
+\end{tabular}
+\end{table}

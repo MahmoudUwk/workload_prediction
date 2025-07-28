@@ -130,7 +130,8 @@ plt.legend(prop={'size': fs-1},loc=(0.8,0.2))
 plt.gca().grid(True)
 plt.show()
 
-plt.savefig(os.path.join(sav_path,'bar_plot.eps'),bbox_inches='tight', format='eps')
+plt.savefig(os.path.join(sav_path,'bar_plot_scheduling.eps'),bbox_inches='tight', format='eps')
+plt.savefig(os.path.join(sav_path,'bar_plot_scheduling.png'),bbox_inches='tight', format='png')
 
 # train and test times
 # if  data_sets[dataset_plot] == 'Alibaba':
@@ -330,7 +331,7 @@ plt.savefig(os.path.join(sav_path,'PredictionsVsReal.eps'),bbox_inches='tight', 
 #scatter plots
 ind_last_scatter = 4
 if data_sets[dataset_plot] == 'Alibaba':
-    fig, axs = plt.subplots(2,int(ind_last_scatter/2), figsize=(20,8),dpi=150, facecolor='w', edgecolor='k')
+    fig, axs = plt.subplots(2,int(ind_last_scatter/2), figsize=(20,8),dpi=500, facecolor='w', edgecolor='k')
     fig.subplots_adjust(hspace = .3, wspace=.08)
     
     axs = axs.ravel()
